@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { CheckCircle2, Minus, Plus, ShoppingBag } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
 
 export function AddToCartForm({
@@ -41,19 +42,19 @@ export function AddToCartForm({
           <button
             type="button"
             onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-            className="flex h-11 w-11 items-center justify-center text-lg text-ink"
+            className="flex h-11 w-11 items-center justify-center text-ink"
             aria-label="Diminuir quantidade"
           >
-            −
+            <Minus className="h-4 w-4" aria-hidden="true" />
           </button>
           <span className="w-8 text-center font-body">{quantity}</span>
           <button
             type="button"
             onClick={() => setQuantity((q) => q + 1)}
-            className="flex h-11 w-11 items-center justify-center text-lg text-ink"
+            className="flex h-11 w-11 items-center justify-center text-ink"
             aria-label="Aumentar quantidade"
           >
-            +
+            <Plus className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -67,13 +68,16 @@ export function AddToCartForm({
         }}
         className="flex h-14 items-center justify-center gap-2 rounded-full bg-ink font-body text-base tracking-wide-label uppercase text-cream transition hover:bg-gold"
       >
-        <span aria-hidden="true">🛍️</span>
+        <ShoppingBag className="h-5 w-5" aria-hidden="true" />
         Adicionar ao carrinho
       </button>
 
       {added && (
         <div className="flex items-center justify-between gap-3 rounded-xl border border-gold/40 bg-gold/10 px-4 py-3 font-body text-sm text-ink">
-          <span>✔ Adicionado ao carrinho</span>
+          <span className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-gold" aria-hidden="true" />
+            Adicionado ao carrinho
+          </span>
           <button
             type="button"
             onClick={() => router.push("/carrinho")}

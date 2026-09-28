@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { Menu, ShoppingBag, X } from "lucide-react";
 import { Logo } from "./Logo";
 import { useCart } from "@/lib/cart-context";
 
@@ -25,8 +26,7 @@ export function Header() {
           aria-label={open ? "Fechar menu" : "Abrir menu"}
           aria-expanded={open}
         >
-          <span className="block h-px w-6 bg-ink" />
-          <span className="block h-px w-6 bg-ink" />
+          {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
 
         <Logo markClassName="h-7 w-7" />
@@ -48,9 +48,7 @@ export function Header() {
           className="relative flex h-11 min-w-11 items-center justify-center gap-2 rounded-full border border-taupe/40 px-3 text-ink transition hover:border-gold hover:text-gold"
           aria-label={`Carrinho, ${totalItems} ${totalItems === 1 ? "artigo" : "artigos"}`}
         >
-          <span aria-hidden="true" className="text-lg">
-            🛍️
-          </span>
+          <ShoppingBag className="h-5 w-5" aria-hidden="true" />
           <span className="hidden font-body text-sm sm:inline">Carrinho</span>
           {totalItems > 0 && (
             <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-gold px-1 font-body text-xs text-white">

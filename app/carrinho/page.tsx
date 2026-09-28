@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { Minus, Plus, ShoppingBag } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
 import { formatKwanza } from "@/lib/currency";
 
@@ -11,9 +12,7 @@ export default function CartPage() {
   if (items.length === 0) {
     return (
       <div className="mx-auto flex max-w-2xl flex-col items-center gap-4 px-4 py-24 text-center">
-        <span aria-hidden="true" className="text-4xl">
-          🛍️
-        </span>
+        <ShoppingBag className="h-10 w-10 text-taupe" aria-hidden="true" />
         <h1 className="font-display text-2xl text-ink">
           O teu carrinho está vazio
         </h1>
@@ -62,19 +61,19 @@ export default function CartPage() {
               <button
                 type="button"
                 onClick={() => setQuantity(item.productId, item.quantity - 1)}
-                className="flex h-10 w-10 items-center justify-center text-lg"
+                className="flex h-10 w-10 items-center justify-center"
                 aria-label={`Diminuir quantidade de ${item.name}`}
               >
-                −
+                <Minus className="h-4 w-4" aria-hidden="true" />
               </button>
               <span className="w-6 text-center font-body">{item.quantity}</span>
               <button
                 type="button"
                 onClick={() => setQuantity(item.productId, item.quantity + 1)}
-                className="flex h-10 w-10 items-center justify-center text-lg"
+                className="flex h-10 w-10 items-center justify-center"
                 aria-label={`Aumentar quantidade de ${item.name}`}
               >
-                +
+                <Plus className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
 

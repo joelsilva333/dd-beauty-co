@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Leaf } from "lucide-react";
 import { formatKwanza } from "@/lib/currency";
 
 export type ProductCardData = {
@@ -28,9 +29,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-taupe">
-            <span aria-hidden="true" className="text-3xl">
-              🌿
-            </span>
+            <Leaf className="h-8 w-8" aria-hidden="true" />
           </div>
         )}
       </div>

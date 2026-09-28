@@ -75,7 +75,7 @@ export default async function Home() {
 
       <section className="bg-taupe/10">
         <div className="mx-auto grid max-w-6xl gap-10 px-4 py-20 md:grid-cols-2 md:px-8 md:py-28">
-          <div className="relative aspect-[4/5] overflow-hidden rounded-2xl">
+          <div className="relative aspect-4/5 overflow-hidden rounded-2xl">
             <Image
               src="https://images.unsplash.com/photo-1556228720-195a672e8a03?q=80&w=1200&auto=format&fit=crop"
               alt="Deodália Dias, a fundadora da marca"

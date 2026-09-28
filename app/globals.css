@@ -40,6 +40,26 @@ body {
   letter-spacing: 0.14em;
 }
 
+.input {
+  height: 3rem;
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--color-taupe) 40%, transparent);
+  background-color: var(--color-white);
+  padding: 0 1rem;
+  font-family: var(--font-body);
+  color: var(--color-ink);
+}
+
+.input:focus {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 1px;
+}
+
+textarea.input {
+  height: auto;
+  padding: 0.75rem 1rem;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .fade-up {
     animation: fade-up 0.7s ease-out both;

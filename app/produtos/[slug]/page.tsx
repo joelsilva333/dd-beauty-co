@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
+import { Truck } from "lucide-react";
 import { getProductBySlug } from "@/lib/products";
 import { formatKwanza } from "@/lib/currency";
 import { AddToCartForm } from "@/components/AddToCartForm";
@@ -81,7 +82,10 @@ export default async function ProductPage({
           />
 
           <div className="rounded-xl border border-taupe/25 bg-taupe/5 px-5 py-4 font-body text-sm text-ink/70">
-            <p className="font-medium text-ink">🚚 Entrega em Angola</p>
+            <p className="flex items-center gap-2 font-medium text-ink">
+              <Truck className="h-4 w-4 text-gold" aria-hidden="true" />
+              Entrega em Angola
+            </p>
             <p className="mt-1">
               Luanda: 2 a 4 dias úteis. Outras províncias: 5 a 10 dias úteis.
               Vamos contactar-te para combinar a entrega.
