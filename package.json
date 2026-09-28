@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
+    "dev:realtime": "tsx watch --env-file=.env realtime/src/server.ts",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -12,24 +13,28 @@
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio"
   },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
-  },
   "dependencies": {
+    "@prisma/adapter-pg": "7.10.0",
     "@prisma/client": "7.10.0",
+    "@uploadthing/react": "^7.3.3",
     "bcryptjs": "^3.0.3",
+    "dotenv": "^18.0.4",
     "jose": "^6.2.12",
     "lucide-react": "^1.48.0",
     "next": "16.3.6",
+    "pg": "^8.23.0",
     "prisma": "7.10.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "socket.io-client": "^4.8.4",
     "stripe": "^22.6.2",
+    "uploadthing": "^7.7.4",
     "zod": "^4.6.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

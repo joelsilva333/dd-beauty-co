@@ -35,27 +35,28 @@ export function FaqAccordion() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col divide-y divide-ink/10 border-y border-ink/10">
       {FAQS.map((faq, index) => {
         const open = openIndex === index;
         return (
-          <div key={faq.question} className="rounded-xl border border-taupe/25">
+          <div key={faq.question}>
             <button
               type="button"
               onClick={() => setOpenIndex(open ? null : index)}
-              className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left"
+              className="flex w-full items-center justify-between gap-4 py-5 text-left"
               aria-expanded={open}
             >
               <span className="font-display text-lg text-ink">{faq.question}</span>
               <ChevronDown
-                className={`h-5 w-5 flex-shrink-0 text-gold transition-transform ${
+                className={`h-4 w-4 shrink-0 text-gold transition-transform ${
                   open ? "rotate-180" : ""
                 }`}
                 aria-hidden="true"
+                strokeWidth={1.5}
               />
             </button>
             {open && (
-              <p className="px-5 pb-4 font-body text-sm text-ink/70">{faq.answer}</p>
+              <p className="pb-5 font-body text-sm leading-relaxed text-ink/65">{faq.answer}</p>
             )}
           </div>
         );

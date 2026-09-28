@@ -1,0 +1,19 @@
+# Blueprint do Render para o servidor de tempo real (socket.io).
+# O site Next.js fica na Vercel; só a pasta /realtime corre aqui.
+services:
+  - type: web
+    name: dd-beauty-realtime
+    runtime: node
+    rootDir: realtime
+    # O plano gratuito adormece após inatividade e corta as ligações abertas.
+    # Para produção usar pelo menos o plano "starter".
+    plan: starter
+    region: frankfurt
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: REALTIME_SECRET
+        sync: false # a mesma chave definida na Vercel
+      - key: ALLOWED_ORIGINS
+        sync: false # ex: https://deodaliadias.co.ao,https://www.deodaliadias.co.ao

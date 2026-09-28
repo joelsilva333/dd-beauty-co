@@ -30,12 +30,10 @@ export default async function CollectionsPage({
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-14 md:px-8">
-      <div className="mb-10 flex flex-col gap-2">
-        <p className="font-body text-sm tracking-wide-label uppercase text-gold">
-          Coleções
-        </p>
-        <h1 className="font-display text-3xl text-ink md:text-4xl">
+    <div className="mx-auto max-w-6xl px-4 py-16 md:px-8 md:py-20">
+      <div className="reveal mb-12 flex flex-col gap-3">
+        <p className="eyebrow-gold">Coleções</p>
+        <h1 className="font-display text-4xl text-ink md:text-5xl">
           Uma curadoria pequena, feita com cuidado
         </h1>
         <p className="max-w-lg font-body text-ink/60">
@@ -44,7 +42,7 @@ export default async function CollectionsPage({
         </p>
       </div>
 
-      <div className="mb-10 flex flex-wrap gap-3">
+      <div className="mb-6 flex flex-wrap gap-x-8 gap-y-3 border-b border-ink/10 pb-6">
         <FilterLink href="/colecoes" active={!categoria}>
           Todos
         </FilterLink>
@@ -59,7 +57,7 @@ export default async function CollectionsPage({
         ))}
       </div>
 
-      <div className="mb-10 flex flex-wrap gap-3">
+      <div className="mb-14 flex flex-wrap gap-x-8 gap-y-3">
         <PriceLink searchCategoria={categoria} preco={preco} value={undefined}>
           Qualquer preço
         </PriceLink>
@@ -75,16 +73,16 @@ export default async function CollectionsPage({
       </div>
 
       {filtered.length > 0 ? (
-        <div className="grid grid-cols-2 gap-5 md:grid-cols-3 md:gap-8">
+        <div className="reveal-stagger grid grid-cols-2 gap-x-5 gap-y-12 md:grid-cols-3 md:gap-x-8">
           {filtered.map((product) => (
             <ProductCard
               key={product.id}
               product={{
                 slug: product.slug,
                 name: product.name,
-                shortDesc: product.shortDesc,
                 priceCents: product.priceCents,
                 compareAtCents: product.compareAtCents,
+                category: product.category?.name,
                 image: product.images[0]
                   ? { url: product.images[0].url, alt: product.images[0].alt }
                   : undefined,
@@ -113,10 +111,10 @@ function FilterLink({
   return (
     <Link
       href={href}
-      className={`rounded-full border px-4 py-2 font-body text-sm transition ${
+      className={`min-h-8 border-b-[1.5px] pb-1 font-body text-[11px] font-medium tracking-[0.18em] uppercase transition ${
         active
-          ? "border-gold bg-gold text-white"
-          : "border-taupe/40 text-ink/70 hover:border-gold hover:text-gold"
+          ? "border-ink text-ink"
+          : "border-transparent text-ink/45 hover:text-ink"
       }`}
     >
       {children}
@@ -144,10 +142,10 @@ function PriceLink({
   return (
     <Link
       href={href}
-      className={`rounded-full border px-4 py-2 font-body text-sm transition ${
+      className={`min-h-8 border-b-[1.5px] pb-1 font-body text-[11px] font-medium tracking-[0.18em] uppercase transition ${
         active
-          ? "border-ink bg-ink text-cream"
-          : "border-taupe/40 text-ink/70 hover:border-ink"
+          ? "border-gold text-ink"
+          : "border-transparent text-ink/45 hover:text-ink"
       }`}
     >
       {children}

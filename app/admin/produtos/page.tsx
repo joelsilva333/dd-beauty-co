@@ -24,8 +24,8 @@ export default async function AdminProductsPage() {
         </Link>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-taupe/25 bg-white">
-        <table className="w-full text-left font-body text-sm">
+      <div className="overflow-x-auto rounded-xl border border-taupe/25 bg-white">
+        <table className="w-full min-w-[560px] text-left font-body text-sm">
           <thead className="bg-taupe/10 text-ink/60">
             <tr>
               <th className="px-4 py-3">Nome</th>

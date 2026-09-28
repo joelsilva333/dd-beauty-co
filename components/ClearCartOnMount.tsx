@@ -4,12 +4,12 @@ import { useEffect } from "react";
 import { useCart } from "@/lib/cart-context";
 
 export function ClearCartOnMount() {
-  const { clear } = useCart();
+  const { clear, hydrated } = useCart();
 
   useEffect(() => {
-    clear();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    // Esperar pelo carrinho guardado; senão seria reposto logo a seguir a limpar.
+    if (hydrated) clear();
+  }, [hydrated, clear]);
 
   return null;
 }

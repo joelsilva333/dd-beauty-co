@@ -24,6 +24,8 @@ type CartContextValue = {
   removeItem: (productId: string) => void;
   setQuantity: (productId: string, quantity: number) => void;
   clear: () => void;
+  // false até o carrinho guardado no browser ser lido; antes disso "vazio" não é fiável.
+  hydrated: boolean;
   totalItems: number;
   totalCents: number;
 };
@@ -36,12 +38,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
+    // Ler o localStorage só depois de montar evita diferenças entre servidor e browser.
+    let stored: CartItem[] = [];
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (raw) setItems(JSON.parse(raw));
+      if (raw) stored = JSON.parse(raw);
     } catch {
       // ignore corrupted storage
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sincronização única com o armazenamento do browser
+    setItems(stored);
     setHydrated(true);
   }, []);
 
@@ -101,10 +107,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       removeItem,
       setQuantity,
       clear,
+      hydrated,
       totalItems,
       totalCents,
     }),
-    [items, addItem, removeItem, setQuantity, clear, totalItems, totalCents],
+    [items, addItem, removeItem, setQuantity, clear, hydrated, totalItems, totalCents],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

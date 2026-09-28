@@ -1,13 +1,25 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { CreditCard, Landmark, Loader2 } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  CheckCircle2,
+  CreditCard,
+  Landmark,
+  Loader2,
+  ShieldCheck,
+  Smartphone,
+} from "lucide-react";
 import { useCart } from "@/lib/cart-context";
 import { formatKwanza } from "@/lib/currency";
-import { ANGOLA_PROVINCES, estimateDeliveryDays } from "@/lib/angola";
-import { calculateShippingCents } from "@/lib/shipping";
+import { ANGOLA_PROVINCES } from "@/lib/angola";
+import { calculateShippingCents, estimateDeliveryDays } from "@/lib/shipping";
+import { aoaCentsToUsdCents } from "@/lib/exchange";
 import { CheckoutSteps } from "@/components/CheckoutSteps";
 
 type DeliveryData = {
@@ -30,20 +42,28 @@ const EMPTY_DELIVERY: DeliveryData = {
   addressNotes: "",
 };
 
-export default function CheckoutPage() {
-  const { items, totalCents } = useCart();
+export default function CheckoutPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ pagamento?: string }>;
+}) {
+  // Voltou do Stripe sem pagar: o carrinho continua intacto para tentar de novo.
+  const paymentCancelled = use(searchParams).pagamento === "cancelado";
+  const { items, totalCents, hydrated } = useCart();
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [delivery, setDelivery] = useState<DeliveryData>(EMPTY_DELIVERY);
   const [paymentMethod, setPaymentMethod] = useState<"STRIPE" | "BITPAY_AO" | null>(
     null,
   );
+  const [bitpayMethod, setBitpayMethod] = useState<"multicaixa_express" | "multicaixa_reference" | null>(null);
+  const [bitpayMobile, setBitpayMobile] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (items.length === 0) router.replace("/carrinho");
-  }, [items, router]);
+    if (hydrated && items.length === 0) router.replace("/carrinho");
+  }, [hydrated, items, router]);
 
   const shippingCents = delivery.province
     ? calculateShippingCents(delivery.province)
@@ -60,7 +80,7 @@ export default function CheckoutPage() {
     [delivery],
   );
 
-  if (items.length === 0) return null;
+  if (!hydrated || items.length === 0) return null;
 
   async function handleConfirm() {
     if (!paymentMethod) return;
@@ -80,6 +100,11 @@ export default function CheckoutPage() {
           addressLine: delivery.addressLine,
           addressNotes: delivery.addressNotes || undefined,
           paymentMethod,
+          bitpayMethod: paymentMethod === "BITPAY_AO" ? bitpayMethod : undefined,
+          bitpayMobile:
+            paymentMethod === "BITPAY_AO" && bitpayMethod === "multicaixa_express" && bitpayMobile
+              ? bitpayMobile
+              : undefined,
           items: items.map((i) => ({
             productId: i.productId,
             quantity: i.quantity,
@@ -102,22 +127,29 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12 md:px-8">
-      <CheckoutSteps current={step + 1} />
+    <div className="mx-auto max-w-3xl px-4 py-14 md:px-8 md:py-20">
+      <CheckoutSteps current={step === 1 ? 2 : 3} />
+
+      {paymentCancelled && (
+        <p role="status" className="mb-8 flex items-start gap-3 border border-gold/40 bg-gold/5 px-4 py-3 font-body text-sm text-ink">
+          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-gold" aria-hidden="true" />
+          O pagamento não foi concluído e nada foi cobrado. Podes tentar novamente — o teu carrinho está guardado.
+        </p>
+      )}
 
       {step === 1 && (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-8">
           <div>
-            <h1 className="font-display text-2xl text-ink">
+            <h1 className="font-display text-3xl text-ink">
               Para onde enviamos a tua encomenda?
             </h1>
-            <p className="mt-1 font-body text-sm text-ink/60">
-              Falta 1 passo para terminar depois deste.
+            <p className="mt-2 font-body text-sm text-ink/55">
+              Faltam 2 passos para terminar.
             </p>
           </div>
 
           <form
-            className="flex flex-col gap-5"
+            className="flex flex-col gap-6"
             onSubmit={(e) => {
               e.preventDefault();
               if (deliveryValid) setStep(2);
@@ -160,7 +192,7 @@ export default function CheckoutPage() {
               />
             </Field>
 
-            <div className="grid gap-5 sm:grid-cols-2">
+            <div className="grid gap-6 sm:grid-cols-2">
               <Field label="Província">
                 <select
                   required
@@ -222,77 +254,115 @@ export default function CheckoutPage() {
               </p>
             )}
 
-            <button
-              type="submit"
-              disabled={!deliveryValid}
-              className="flex h-14 items-center justify-center rounded-full bg-ink font-body text-base tracking-wide-label uppercase text-cream transition hover:bg-gold disabled:cursor-not-allowed disabled:opacity-40"
-            >
+            <button type="submit" disabled={!deliveryValid} className="btn-dark mt-2">
               Continuar para pagamento
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </button>
+            {!deliveryValid && (
+              <p className="text-center font-body text-sm text-ink/50">
+                Preenche o nome, telefone, província, município e morada para continuar.
+              </p>
+            )}
           </form>
         </div>
       )}
 
       {step === 2 && (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-8">
           <div>
-            <h1 className="font-display text-2xl text-ink">
+            <h1 className="font-display text-3xl text-ink">
               Como preferes pagar?
             </h1>
-            <p className="mt-1 font-body text-sm text-ink/60">
+            <p className="mt-2 font-body text-sm text-ink/55">
               As duas opções são seguras. Escolhe a que for mais fácil para ti.
             </p>
           </div>
 
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3">
             <PaymentOption
-              icon={<CreditCard className="h-6 w-6" aria-hidden="true" />}
-              title="Cartão internacional (Stripe)"
-              description="Paga com cartão Visa ou Mastercard, de forma segura."
+              icon={<CreditCard className="h-5 w-5" aria-hidden="true" strokeWidth={1.5} />}
+              title="Cartão Visa ou Mastercard"
+              description="Pagas numa página segura do Stripe, a plataforma de pagamentos internacional."
               selected={paymentMethod === "STRIPE"}
               onSelect={() => setPaymentMethod("STRIPE")}
             />
             <PaymentOption
-              icon={<Landmark className="h-6 w-6" aria-hidden="true" />}
-              title="BitPayAO (pagamento local)"
-              description="Paga através dos métodos angolanos de referência, com toda a confiança."
+              icon={<Landmark className="h-5 w-5" aria-hidden="true" strokeWidth={1.5} />}
+              title="BitPay (pagamento angolano)"
+              description="Pagas em Kwanza com os métodos locais que já conheces."
               selected={paymentMethod === "BITPAY_AO"}
               onSelect={() => setPaymentMethod("BITPAY_AO")}
             />
           </div>
 
+          {paymentMethod === "BITPAY_AO" && (
+            <fieldset className="fade-up flex flex-col gap-3 border-t border-ink/10 pt-6">
+              <legend className="eyebrow mb-1">Escolhe a forma de pagar em Kwanza</legend>
+              <SubOption
+                icon={<Smartphone className="h-4 w-4" aria-hidden="true" strokeWidth={1.5} />}
+                title="Multicaixa Express"
+                description="Aprovas o pagamento na app, no teu telemóvel. É o mais rápido."
+                selected={bitpayMethod === "multicaixa_express"}
+                onSelect={() => setBitpayMethod("multicaixa_express")}
+              />
+              {bitpayMethod === "multicaixa_express" && (
+                <label className="flex flex-col gap-2 pl-1">
+                  <span className="eyebrow">Número com Multicaixa Express</span>
+                  <input
+                    type="tel"
+                    autoComplete="tel"
+                    value={bitpayMobile || delivery.customerPhone}
+                    onChange={(e) => setBitpayMobile(e.target.value)}
+                    className="input"
+                    placeholder="9XX XXX XXX"
+                  />
+                </label>
+              )}
+              <SubOption
+                icon={<Landmark className="h-4 w-4" aria-hidden="true" strokeWidth={1.5} />}
+                title="Referência Multicaixa"
+                description="Recebes uma referência para pagar no ATM ou na app do banco, até 3 dias."
+                selected={bitpayMethod === "multicaixa_reference"}
+                onSelect={() => setBitpayMethod("multicaixa_reference")}
+              />
+            </fieldset>
+          )}
+
+          <p className="flex items-center gap-2 font-body text-sm text-ink/55">
+            <ShieldCheck className="h-4 w-4 text-gold" aria-hidden="true" strokeWidth={1.5} />
+            Nunca guardamos os dados do teu cartão.
+          </p>
+
           <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={() => setStep(1)}
-              className="flex h-14 flex-1 items-center justify-center rounded-full border border-taupe/40 font-body text-sm tracking-wide-label uppercase text-ink"
-            >
+            <button type="button" onClick={() => setStep(1)} className="btn-outline flex-1">
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
               Voltar
             </button>
             <button
               type="button"
-              disabled={!paymentMethod}
+              disabled={!paymentMethod || (paymentMethod === "BITPAY_AO" && !bitpayMethod)}
               onClick={() => setStep(3)}
-              className="flex h-14 flex-1 items-center justify-center rounded-full bg-ink font-body text-sm tracking-wide-label uppercase text-cream transition hover:bg-gold disabled:cursor-not-allowed disabled:opacity-40"
+              className="btn-dark flex-1"
             >
               Continuar
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
         </div>
       )}
 
       {step === 3 && (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-8">
           <div>
-            <h1 className="font-display text-2xl text-ink">
+            <h1 className="font-display text-3xl text-ink">
               Revê o teu pedido
             </h1>
-            <p className="mt-1 font-body text-sm text-ink/60">
-              Confirma que está tudo certo antes de finalizar.
+            <p className="mt-2 font-body text-sm text-ink/55">
+              Falta 1 passo para terminar: confirma que está tudo certo.
             </p>
           </div>
 
-          <div className="flex flex-col gap-3 rounded-xl border border-taupe/25 p-5">
+          <div className="flex flex-col gap-3 border-y border-ink/10 py-6">
             {items.map((item) => (
               <div key={item.productId} className="flex justify-between font-body text-sm">
                 <span>
@@ -301,7 +371,7 @@ export default function CheckoutPage() {
                 <span>{formatKwanza(item.priceCents * item.quantity)}</span>
               </div>
             ))}
-            <div className="border-t border-taupe/25 pt-3 flex justify-between font-body text-sm text-ink/70">
+            <div className="border-t border-ink/10 pt-3 flex justify-between font-body text-sm text-ink/60">
               <span>Entrega</span>
               <span>{formatKwanza(shippingCents)}</span>
             </div>
@@ -311,16 +381,51 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-taupe/25 p-5 font-body text-sm text-ink/70">
+          <div className="font-body text-sm text-ink/65">
             <p className="font-medium text-ink">Entregar a</p>
-            <p>{delivery.customerName} · {delivery.customerPhone}</p>
+            <p className="mt-1">{delivery.customerName} · {delivery.customerPhone}</p>
             <p>
               {delivery.addressLine}, {delivery.municipality}, {delivery.province}
             </p>
+            <p className="mt-2">Chega em {estimateDeliveryDays(delivery.province)}.</p>
+            <button type="button" onClick={() => setStep(1)} className="link-underline mt-3 underline">
+              Alterar morada
+            </button>
+          </div>
+
+          <div className="flex items-start gap-3 border-t border-ink/10 pt-6 font-body text-sm text-ink/65">
+            {paymentMethod === "STRIPE" ? (
+              <CreditCard className="mt-0.5 h-5 w-5 shrink-0 text-gold" aria-hidden="true" strokeWidth={1.5} />
+            ) : (
+              <Landmark className="mt-0.5 h-5 w-5 shrink-0 text-gold" aria-hidden="true" strokeWidth={1.5} />
+            )}
+            <div>
+              <p className="font-medium text-ink">
+                {paymentMethod === "STRIPE"
+                  ? "Cartão Visa ou Mastercard"
+                  : bitpayMethod === "multicaixa_express"
+                    ? "Multicaixa Express"
+                    : "Referência Multicaixa"}
+              </p>
+              {paymentMethod === "STRIPE" ? (
+                <p className="mt-1">
+                  Ao confirmar, abrimos a página segura do Stripe. O cartão é cobrado em
+                  dólares: cerca de {(aoaCentsToUsdCents(totalWithShipping) / 100).toFixed(2)} USD
+                  (o teu banco pode aplicar a taxa de câmbio dele).
+                </p>
+              ) : (
+                <p className="mt-1">
+                  {bitpayMethod === "multicaixa_express"
+                    ? `Ao confirmar, recebes um pedido de pagamento na app Multicaixa Express do número ${bitpayMobile || delivery.customerPhone}. Só tens de aprovar.`
+                    : "Ao confirmar, mostramos-te a entidade e a referência para pagares no ATM ou na app do banco."}
+                </p>
+              )}
+            </div>
           </div>
 
           {error && (
-            <p className="rounded-lg bg-red-50 px-4 py-3 font-body text-sm text-red-700">
+            <p role="alert" className="flex items-start gap-3 border border-ink/20 bg-ink/5 px-4 py-3 font-body text-sm text-ink">
+              <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-ink" aria-hidden="true" />
               {error}
             </p>
           )}
@@ -329,24 +434,30 @@ export default function CheckoutPage() {
             <button
               type="button"
               onClick={() => setStep(2)}
-              className="flex h-14 flex-1 items-center justify-center rounded-full border border-taupe/40 font-body text-sm tracking-wide-label uppercase text-ink"
+              disabled={submitting}
+              className="btn-outline flex-1"
             >
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
               Voltar
             </button>
             <button
               type="button"
               disabled={submitting}
               onClick={handleConfirm}
-              className="flex h-14 flex-1 items-center justify-center gap-2 rounded-full bg-gold font-body text-sm tracking-wide-label uppercase text-white transition hover:bg-ink disabled:opacity-60"
+              className="btn-dark flex-1"
             >
-              {submitting && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
-              Confirmar pedido
+              {submitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+              )}
+              {submitting ? "A confirmar..." : "Confirmar pedido"}
             </button>
           </div>
         </div>
       )}
 
-      <p className="mt-10 text-center font-body text-xs text-ink/40">
+      <p className="mt-12 text-center font-body text-xs text-ink/40">
         Tens dúvidas?{" "}
         <Link href="/contacto" className="underline underline-offset-4">
           Fala connosco
@@ -360,7 +471,7 @@ export default function CheckoutPage() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="flex flex-col gap-2">
-      <span className="font-body text-sm text-ink/70">{label}</span>
+      <span className="eyebrow">{label}</span>
       {children}
     </label>
   );
@@ -383,15 +494,57 @@ function PaymentOption({
     <button
       type="button"
       onClick={onSelect}
-      className={`flex items-start gap-4 rounded-xl border p-5 text-left transition ${
-        selected ? "border-gold bg-gold/10" : "border-taupe/30 hover:border-gold/60"
+      aria-pressed={selected}
+      className={`relative flex items-start gap-4 border p-5 text-left transition ${
+        selected ? "border-ink" : "border-ink/15 hover:border-ink/40"
       }`}
     >
-      <span className={selected ? "text-gold" : "text-ink/60"}>{icon}</span>
+      <span className={selected ? "text-gold" : "text-ink/50"}>{icon}</span>
       <span className="flex flex-col gap-1">
-        <span className="font-display text-lg text-ink">{title}</span>
-        <span className="font-body text-sm text-ink/60">{description}</span>
+        <span className="font-body font-medium text-ink">{title}</span>
+        <span className="font-body text-sm text-ink/55">{description}</span>
       </span>
+      {selected && (
+        <span className="absolute right-4 top-4 flex h-5 w-5 items-center justify-center bg-ink text-cream">
+          <Check className="h-3 w-3" aria-hidden="true" />
+        </span>
+      )}
+    </button>
+  );
+}
+
+function SubOption({
+  icon,
+  title,
+  description,
+  selected,
+  onSelect,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-pressed={selected}
+      className={`relative flex min-h-16 items-start gap-3 border p-4 text-left transition ${
+        selected ? "border-ink" : "border-ink/15 hover:border-ink/40"
+      }`}
+    >
+      <span className={`mt-0.5 ${selected ? "text-gold" : "text-ink/50"}`}>{icon}</span>
+      <span className="flex flex-col gap-0.5">
+        <span className="font-body font-medium text-ink">{title}</span>
+        <span className="font-body text-sm text-ink/55">{description}</span>
+      </span>
+      {selected && (
+        <span className="absolute right-3 top-3 flex h-4 w-4 items-center justify-center bg-ink text-cream">
+          <Check className="h-2.5 w-2.5" aria-hidden="true" />
+        </span>
+      )}
     </button>
   );
 }

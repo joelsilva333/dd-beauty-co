@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 enum OrderStatus {
@@ -37,25 +36,25 @@ model Category {
 }
 
 model Product {
-  id            String         @id @default(cuid())
-  name          String
-  slug          String         @unique
-  shortDesc     String
-  story         String
-  ritual        String?
-  priceCents    Int
+  id             String         @id @default(cuid())
+  name           String
+  slug           String         @unique
+  shortDesc      String
+  story          String
+  ritual         String?
+  priceCents     Int
   compareAtCents Int?
-  currency      String         @default("AOA")
-  stock         Int            @default(0)
-  featured      Boolean        @default(false)
-  curatedMonth  Boolean        @default(false)
-  active        Boolean        @default(true)
-  categoryId    String?
-  category      Category?      @relation(fields: [categoryId], references: [id])
-  images        ProductImage[]
-  orderItems    OrderItem[]
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  currency       String         @default("AOA")
+  stock          Int            @default(0)
+  featured       Boolean        @default(false)
+  curatedMonth   Boolean        @default(false)
+  active         Boolean        @default(true)
+  categoryId     String?
+  category       Category?      @relation(fields: [categoryId], references: [id])
+  images         ProductImage[]
+  orderItems     OrderItem[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 }
 
 model ProductImage {
@@ -68,26 +67,37 @@ model ProductImage {
 }
 
 model Order {
-  id              String        @id @default(cuid())
-  orderNumber     String        @unique
-  customerName    String
-  customerPhone   String
-  customerEmail   String?
-  province        String
-  municipality    String
-  addressLine     String
-  addressNotes    String?
-  items           OrderItem[]
-  subtotalCents   Int
-  shippingCents   Int           @default(0)
-  totalCents      Int
-  currency        String        @default("AOA")
-  paymentMethod   PaymentMethod
-  paymentStatus   PaymentStatus @default(PENDENTE)
-  stripeSessionId String?
-  status          OrderStatus   @default(PENDENTE)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id                 String        @id @default(cuid())
+  orderNumber        String        @unique
+  customerName       String
+  customerPhone      String
+  customerEmail      String?
+  province           String
+  municipality       String
+  addressLine        String
+  addressNotes       String?
+  items              OrderItem[]
+  subtotalCents      Int
+  shippingCents      Int           @default(0)
+  totalCents         Int
+  currency           String        @default("AOA")
+  paymentMethod      PaymentMethod
+  paymentStatus      PaymentStatus @default(PENDENTE)
+  stripeSessionId    String?
+  // Marca se o stock desta encomenda já foi devolvido (cancelamento/pagamento expirado),
+  // para nunca o devolver duas vezes.
+  stockReleased      Boolean       @default(false)
+  // BitPay: o pagamento em curso (pode haver nova tentativa se o Express for recusado).
+  bitpayPaymentId    String?
+  bitpayMethod       String?
+  bitpayAttempts     Int           @default(0)
+  bitpayFailureCode  String?
+  bitpayRefEntity    String?
+  bitpayRefNumber    String?
+  bitpayRefExpiresAt DateTime?
+  status             OrderStatus   @default(PENDENTE)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
 }
 
 model OrderItem {
@@ -107,4 +117,36 @@ model AdminUser {
   email        String   @unique
   passwordHash String
   createdAt    DateTime @default(now())
+}
+
+enum ChatSender {
+  CLIENTE
+  EQUIPA
+}
+
+model ChatConversation {
+  id            String        @id @default(cuid())
+  // Chave secreta guardada no browser da cliente para voltar à conversa sem login.
+  accessKey     String
+  customerName  String
+  customerPhone String?
+  orderNumber   String?
+  closed        Boolean       @default(false)
+  unreadByTeam  Int           @default(0)
+  messages      ChatMessage[]
+  lastMessageAt DateTime      @default(now())
+  createdAt     DateTime      @default(now())
+
+  @@index([lastMessageAt])
+}
+
+model ChatMessage {
+  id             String           @id @default(cuid())
+  conversationId String
+  conversation   ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         ChatSender
+  body           String
+  createdAt      DateTime         @default(now())
+
+  @@index([conversationId, createdAt])
 }

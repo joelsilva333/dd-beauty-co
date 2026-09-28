@@ -1,7 +1,11 @@
+import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+});
 
 async function main() {
   const categories = await Promise.all(
@@ -33,7 +37,7 @@ async function main() {
       curatedMonth: true,
       categoryId: facial.id,
       images: [
-        "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?q=80&w=1200&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1550159793-baf23ed9b337?q=80&w=1200&auto=format&fit=crop",
       ],
     },
     {
@@ -50,7 +54,7 @@ async function main() {
       curatedMonth: true,
       categoryId: corpo.id,
       images: [
-        "https://images.unsplash.com/photo-1600428853876-fb5a850b444c?q=80&w=1200&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1693004926638-d2e47d705229?q=80&w=1200&auto=format&fit=crop",
       ],
     },
     {
@@ -84,7 +88,7 @@ async function main() {
       curatedMonth: true,
       categoryId: fragrancias.id,
       images: [
-        "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1200&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1768025719875-48ed072f3084?q=80&w=1200&auto=format&fit=crop",
       ],
     },
     {
@@ -100,7 +104,7 @@ async function main() {
       curatedMonth: false,
       categoryId: corpo.id,
       images: [
-        "https://images.unsplash.com/photo-1600857062241-98e5dba7f214?q=80&w=1200&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1618840313409-66c0d92d6f26?q=80&w=1200&auto=format&fit=crop",
       ],
     },
     {
@@ -117,7 +121,7 @@ async function main() {
       curatedMonth: false,
       categoryId: facial.id,
       images: [
-        "https://images.unsplash.com/photo-1611930022073-b7a4ba5fcccd?q=80&w=1200&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1781344116880-029945a42b75?q=80&w=1200&auto=format&fit=crop",
       ],
     },
   ];

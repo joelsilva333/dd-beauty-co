@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Servidor socket.io (Render) tem o seu próprio package.json e tsconfig.
+    "realtime/**",
   ]),
 ]);
 

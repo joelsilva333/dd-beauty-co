@@ -1,11 +1,28 @@
-import Image from "next/image";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Truck } from "lucide-react";
+import { MessageCircle, ShieldCheck, Truck } from "lucide-react";
 import { getProductBySlug } from "@/lib/products";
 import { formatKwanza } from "@/lib/currency";
+import { SHIPPING_SUMMARY } from "@/lib/shipping";
 import { AddToCartForm } from "@/components/AddToCartForm";
+import { ProductGallery } from "@/components/ProductGallery";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const product = await getProductBySlug(slug);
+  if (!product) return {};
+  return {
+    title: `${product.name} — Deodália Dias`,
+    description: product.shortDesc,
+    openGraph: { images: product.images[0] ? [product.images[0].url] : undefined },
+  };
+}
 
 export default async function ProductPage({
   params,
@@ -19,54 +36,29 @@ export default async function ProductPage({
   const mainImage = product.images[0];
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 md:px-8">
+    <div className="mx-auto max-w-6xl px-4 py-10 md:px-8 md:py-16">
       <div className="grid gap-10 md:grid-cols-2 md:gap-16">
-        <div className="flex flex-col gap-3">
-          <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-taupe/10">
-            {mainImage && (
-              <Image
-                src={mainImage.url}
-                alt={mainImage.alt}
-                fill
-                priority
-                sizes="(max-width: 768px) 100vw, 50vw"
-                className="object-cover"
-              />
-            )}
-          </div>
-          {product.images.length > 1 && (
-            <div className="grid grid-cols-4 gap-3">
-              {product.images.slice(1).map((img) => (
-                <div
-                  key={img.id}
-                  className="relative aspect-square overflow-hidden rounded-lg bg-taupe/10"
-                >
-                  <Image src={img.url} alt={img.alt} fill className="object-cover" />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <ProductGallery
+          images={product.images.map((img) => ({ id: img.id, url: img.url, alt: img.alt }))}
+        />
 
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-7 md:pt-2">
           <div>
             {product.category && (
-              <p className="font-body text-sm tracking-wide-label uppercase text-gold">
-                {product.category.name}
-              </p>
+              <p className="eyebrow-gold">{product.category.name}</p>
             )}
-            <h1 className="mt-2 font-display text-3xl text-ink md:text-4xl">
+            <h1 className="mt-3 font-display text-3xl leading-tight text-ink md:text-4xl">
               {product.name}
             </h1>
-            <p className="mt-3 font-body text-ink/70">{product.shortDesc}</p>
+            <p className="mt-4 font-body leading-relaxed text-ink/65">{product.shortDesc}</p>
           </div>
 
-          <div className="flex items-baseline gap-3">
-            <span className="font-display text-2xl text-ink">
+          <div className="flex items-baseline gap-3 border-t border-ink/10 pt-6">
+            <span className="font-body text-xl text-ink">
               {formatKwanza(product.priceCents)}
             </span>
             {product.compareAtCents && product.compareAtCents > product.priceCents && (
-              <span className="font-body text-sm text-ink/40 line-through">
+              <span className="font-body text-base text-ink/40 line-through">
                 {formatKwanza(product.compareAtCents)}
               </span>
             )}
@@ -78,34 +70,49 @@ export default async function ProductPage({
             name={product.name}
             priceCents={product.priceCents}
             image={mainImage?.url ?? ""}
-            inStock={product.stock > 0}
+            stock={product.stock}
           />
 
-          <div className="rounded-xl border border-taupe/25 bg-taupe/5 px-5 py-4 font-body text-sm text-ink/70">
-            <p className="flex items-center gap-2 font-medium text-ink">
-              <Truck className="h-4 w-4 text-gold" aria-hidden="true" />
-              Entrega em Angola
+          <div className="flex flex-col gap-3 border-t border-ink/10 pt-6 font-body text-sm text-ink/65">
+            <p className="flex items-center gap-2.5 font-medium text-ink">
+              <Truck className="h-4 w-4 text-gold" aria-hidden="true" strokeWidth={1.5} />
+              Entrega em toda Angola
             </p>
-            <p className="mt-1">
-              Luanda: 2 a 4 dias úteis. Outras províncias: 5 a 10 dias úteis.
-              Vamos contactar-te para combinar a entrega.
+            <ul className="flex flex-col gap-1.5 pl-6">
+              {SHIPPING_SUMMARY.map((zone) => (
+                <li key={zone.label} className="flex justify-between gap-3">
+                  <span>{zone.label}</span>
+                  <span className="text-ink/80">
+                    {zone.days} · {formatKwanza(zone.priceCents)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="pl-6">Vamos ligar-te para combinar o dia e a hora da entrega.</p>
+            <p className="flex items-center gap-2.5">
+              <ShieldCheck className="h-4 w-4 text-gold" aria-hidden="true" strokeWidth={1.5} />
+              Pagamento seguro por cartão ou BitPay.
             </p>
-          </div>
-
-          <div className="flex flex-col gap-3 border-t border-taupe/25 pt-6">
-            <h2 className="font-display text-xl text-ink">A história por trás</h2>
-            <p className="font-body text-ink/70">{product.story}</p>
-            {product.ritual && (
-              <>
-                <h3 className="mt-2 font-display text-lg text-ink">
-                  Ritual de uso
-                </h3>
-                <p className="font-body text-ink/70">{product.ritual}</p>
-              </>
-            )}
+            <p className="flex items-center gap-2.5">
+              <MessageCircle className="h-4 w-4 text-gold" aria-hidden="true" strokeWidth={1.5} />
+              Dúvidas? Usa o botão “Precisas de ajuda?”.
+            </p>
           </div>
         </div>
       </div>
+
+      <section className="reveal-stagger mx-auto mt-24 grid max-w-4xl gap-14 border-t border-ink/10 pt-20 md:grid-cols-2">
+        <div className="flex flex-col gap-4">
+          <p className="eyebrow-gold">A história por trás</p>
+          <p className="font-display text-2xl leading-snug text-ink">{product.story}</p>
+        </div>
+        {product.ritual && (
+          <div className="flex flex-col gap-4">
+            <p className="eyebrow-gold">O teu ritual</p>
+            <p className="font-body leading-relaxed text-ink/70">{product.ritual}</p>
+          </div>
+        )}
+      </section>
     </div>
   );
 }

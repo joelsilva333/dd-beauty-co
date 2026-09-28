@@ -1,11 +1,9 @@
+import { adminSessionSecret } from "@/lib/admin-secret";
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
 const COOKIE_NAME = "dd_admin_session";
-const secret = () =>
-  new TextEncoder().encode(
-    process.env.ADMIN_SESSION_SECRET ?? "dev-only-secret-change-me",
-  );
+const secret = adminSessionSecret;
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

@@ -1,11 +1,9 @@
+import { adminSessionSecret } from "@/lib/admin-secret";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
 const COOKIE_NAME = "dd_admin_session";
-const secret = () =>
-  new TextEncoder().encode(
-    process.env.ADMIN_SESSION_SECRET ?? "dev-only-secret-change-me",
-  );
+const secret = adminSessionSecret;
 
 export type AdminSession = {
   adminId: string;

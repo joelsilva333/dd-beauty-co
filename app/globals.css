@@ -2,7 +2,11 @@
 
 :root {
   --color-ink: #2e2019;
-  --color-cream: #f7f2ea;
+  /* Fundo principal: branco puro. O tom marfim original (#f7f2ea) fica só
+     como "--color-ivory", para as poucas manchas de cor que ainda o pedem
+     (ex: fundo do hero antes da imagem carregar). */
+  --color-cream: #ffffff;
+  --color-ivory: #f7f2ea;
   --color-taupe: #a98f7c;
   --color-gold: #b08d57;
   --color-white: #ffffff;
@@ -11,6 +15,7 @@
 @theme inline {
   --color-ink: var(--color-ink);
   --color-cream: var(--color-cream);
+  --color-ivory: var(--color-ivory);
   --color-taupe: var(--color-taupe);
   --color-gold: var(--color-gold);
 
@@ -40,24 +45,84 @@ body {
   letter-spacing: 0.14em;
 }
 
+/* ------------------------------------------------------------------
+   Sistema visual editorial (arestas vivas, tipografia como hierarquia,
+   dourado só como acento). Ver README para o racional da marca.
+   ------------------------------------------------------------------ */
+
 .input {
-  height: 3rem;
-  border-radius: 0.75rem;
-  border: 1px solid color-mix(in srgb, var(--color-taupe) 40%, transparent);
+  height: 3.25rem;
+  /* 16px evita o zoom automático do iPhone ao tocar no campo. */
+  font-size: 1rem;
+  width: 100%;
+  min-width: 0;
+  border-radius: 0;
+  border: 1px solid color-mix(in srgb, var(--color-ink) 22%, transparent);
   background-color: var(--color-white);
-  padding: 0 1rem;
+  padding: 0 1.1rem;
   font-family: var(--font-body);
   color: var(--color-ink);
+  transition: border-color 0.2s ease;
+}
+
+.input::placeholder {
+  color: color-mix(in srgb, var(--color-ink) 38%, transparent);
+}
+
+.input:hover {
+  border-color: color-mix(in srgb, var(--color-ink) 45%, transparent);
 }
 
 .input:focus {
-  outline: 2px solid var(--color-gold);
-  outline-offset: 1px;
+  outline: none;
+  border-color: var(--color-ink);
+  box-shadow: 0 0 0 1px var(--color-ink);
 }
 
 textarea.input {
   height: auto;
-  padding: 0.75rem 1rem;
+  padding: 0.85rem 1.1rem;
+}
+
+@layer components {
+  /* Rótulo pequeno, maiúsculas, muito espaçado — a assinatura tipográfica da marca.
+     (Nota: o Tailwind v4 não deixa um @apply encadear outra classe de components,
+     por isso cada variante repete a lista de utilitários em vez de compor .eyebrow.) */
+  .eyebrow {
+    @apply font-body text-[11px] font-medium tracking-[0.3em] text-ink/45 uppercase;
+  }
+  .eyebrow-gold {
+    @apply font-body text-[11px] font-medium tracking-[0.3em] text-gold uppercase;
+  }
+  .eyebrow-light {
+    @apply font-body text-[11px] font-medium tracking-[0.3em] text-cream/65 uppercase;
+  }
+
+  /* Botões: sem cantos arredondados, letras espaçadas, transição de cor limpa.
+     Uma única cor sólida por estado — nunca gradientes nem sombras. */
+  .btn-dark {
+    @apply inline-flex min-h-14 items-center justify-center gap-2.5 whitespace-nowrap border border-ink bg-ink px-8 font-body text-[11px] font-medium tracking-[0.22em] text-cream uppercase transition-colors duration-300 hover:bg-cream hover:text-ink disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  .btn-outline {
+    @apply inline-flex min-h-14 items-center justify-center gap-2.5 whitespace-nowrap border border-ink bg-transparent px-8 font-body text-[11px] font-medium tracking-[0.22em] text-ink uppercase transition-colors duration-300 hover:bg-ink hover:text-cream disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  /* Vidro fosco — usado sobre fotografia, nunca sobre fundo já claro. */
+  .btn-outline-light {
+    @apply inline-flex min-h-14 items-center justify-center gap-2.5 whitespace-nowrap border border-cream/50 bg-cream/10 px-8 font-body text-[11px] font-medium tracking-[0.22em] text-cream uppercase backdrop-blur-md transition-colors duration-300 hover:border-cream hover:bg-cream hover:text-ink hover:backdrop-blur-none disabled:cursor-not-allowed disabled:opacity-40;
+  }
+
+  /* Ligação de texto sublinhada — a alternativa a um botão quando a ação é secundária. */
+  .link-underline {
+    @apply font-body text-[11px] font-medium tracking-[0.22em] text-ink uppercase decoration-1 underline-offset-[6px] transition hover:decoration-2;
+  }
+
+  /* Painel de vidro — para texto sobre fotografia, sem nunca recorrer a um bloco opaco. */
+  .glass {
+    @apply border border-cream/30 bg-cream/10 backdrop-blur-xl;
+  }
+  .glass-dark {
+    @apply border border-ink/10 bg-white/50 backdrop-blur-xl;
+  }
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -74,5 +139,46 @@ textarea.input {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* ------------------------------------------------------------------
+   Revelação ao aparecer no ecrã (fade + subida leve, uma só direção).
+   1. Nativo: animação guiada pelo scroll (corre fora da thread principal).
+   2. Fallback: IntersectionObserver (components/RevealOnScroll.tsx) adiciona
+      .is-visible. Só esconde o conteúdo depois de o script confirmar que corre,
+      por isso sem JS (ou numa rede lenta) tudo fica visível.
+   ------------------------------------------------------------------ */
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports ((animation-timeline: view()) and (animation-range: entry)) {
+    .reveal,
+    .reveal-stagger > * {
+      animation: reveal-up linear both;
+      animation-timeline: view();
+      animation-range: entry 5% cover 25%;
+    }
+  }
+
+  .reveal-fallback .reveal,
+  .reveal-fallback .reveal-stagger > * {
+    opacity: 0;
+    transform: translateY(28px);
+    transition:
+      opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+    transition-delay: calc(var(--reveal-index, 0) * 90ms);
+  }
+
+  .reveal-fallback .reveal.is-visible,
+  .reveal-fallback .reveal-stagger > .is-visible {
+    opacity: 1;
+    transform: none;
   }
 }

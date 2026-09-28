@@ -1,62 +1,108 @@
 # Deodália Dias — Beauty & Co.
 
-E-commerce completo para a marca de beleza angolana Deodália Dias. Next.js 16 (App Router) + TypeScript + Tailwind v4 + Prisma/PostgreSQL + Stripe + BitPayAO (stub).
+E-commerce da marca de beleza angolana Deodália Dias. Next.js 16 (App Router) + TypeScript + Tailwind v4 + Prisma 7/PostgreSQL + Stripe + BitPay + socket.io + Uploadthing.
 
-## Estado atual (28/09/2026)
+## Arquitetura
 
-Construído nesta sessão:
-
-- **Identidade visual**: fontes (Cormorant Garamond + Jost), paleta de cores (castanho-café, creme, taupe, dourado) em [app/globals.css](app/globals.css), logótipo em [components/Logo.tsx](components/Logo.tsx).
-- **Layout global**: [Header](components/Header.tsx), [Footer](components/Footer.tsx), botão fixo de [WhatsApp](components/WhatsAppButton.tsx), tudo em [app/layout.tsx](app/layout.tsx). Ícones via `lucide-react` (sem emojis, por pedido explícito).
-- **Carrinho**: contexto client-side com localStorage em [lib/cart-context.tsx](lib/cart-context.tsx).
-- **Páginas públicas**: Homepage ([app/(home)/page.tsx](app/(home)/page.tsx)), Coleções com filtros ([app/colecoes/page.tsx](app/colecoes/page.tsx)), Produto ([app/produtos/[slug]/page.tsx](app/produtos/[slug]/page.tsx)), Carrinho ([app/carrinho/page.tsx](app/carrinho/page.tsx)), Checkout em 3 passos com barra de progresso ([app/checkout/page.tsx](app/checkout/page.tsx)), Confirmação de pedido ([app/checkout/confirmado/[orderNumber]/page.tsx](app/checkout/confirmado/[orderNumber]/page.tsx)), Os meus pedidos por número+telefone ([app/minha-conta/page.tsx](app/minha-conta/page.tsx)), Sobre ([app/sobre/page.tsx](app/sobre/page.tsx)), Contacto/FAQ ([app/contacto/page.tsx](app/contacto/page.tsx)).
-- **Checkout/pagamentos**: [app/api/checkout/route.ts](app/api/checkout/route.ts) cria a encomenda na BD e, se Stripe, cria uma Checkout Session (conversão AOA→USD placeholder em [lib/exchange.ts](lib/exchange.ts), já que o Stripe não processa AOA). BitPayAO está como **stub**: a encomenda fica com `paymentStatus: PENDENTE` e não há integração real com a API da BitPayAO ainda — falta a documentação/credenciais deles.
-- **Painel administrativo** em `/admin`: login com sessão JWT em cookie httpOnly ([lib/auth.ts](lib/auth.ts), [middleware.ts](middleware.ts)), dashboard, CRUD de produtos ([app/admin/produtos](app/admin/produtos)), gestão de encomendas com mudança de estado ([app/admin/encomendas/page.tsx](app/admin/encomendas/page.tsx)).
-- **Base de dados**: schema Prisma completo em [prisma/schema.prisma](prisma/schema.prisma) (Product, Category, Order, OrderItem, AdminUser) e seed de exemplo em [prisma/seed.ts](prisma/seed.ts) com 6 produtos e utilizador admin (`admin@deodaliadias.co.ao` / `deodalia2026`).
-
-## O que falta para ficar pronto para produção
-
-1. **Base de dados real**: não há Postgres local nesta máquina (sem Docker). Precisas de:
-   - Criar uma base de dados Postgres (recomendo [Neon](https://neon.tech), tem tier gratuito e integra bem com Vercel).
-   - Copiar `.env.example` para `.env` e preencher `DATABASE_URL`.
-   - Correr `npm run db:migrate` (cria as tabelas) e depois `npm run db:seed` (popula produtos + admin).
-   - **Ainda não corri nada disto** — o schema nunca foi migrado contra uma BD real, por isso vale a pena testar o fluxo completo assim que tiveres a ligação.
-
-2. **Instalação de dependências**: a instalação do `npm` nesta sessão teve problemas (o `prisma@latest` resolvido era uma release candidate da v8 que arrasta uma árvore de dependências gigante e causou erros de caminho longo no Windows). Já fixei as versões para `prisma@7.10.0` e `@prisma/client@7.10.0` (estáveis) no `package.json` e lancei um `npm install` limpo em background — **confirma que terminou sem erros** antes de continuares (`npm run dev` vai falhar se não tiver terminado bem).
-
-3. **Stripe**: chave de teste (`STRIPE_SECRET_KEY`) e webhook secret (`STRIPE_WEBHOOK_SECRET`) ainda por preencher no `.env`. O webhook está em [app/api/webhooks/stripe/route.ts](app/api/webhooks/stripe/route.ts) — precisa de `stripe listen` local para testar.
-
-4. **BitPayAO**: não tenho documentação da API deles nesta sessão, por isso o fluxo é apenas um placeholder (marca a encomenda como pendente e mostra uma mensagem no ecrã de confirmação). Quando tiveres as credenciais/documentação, será preciso substituir o bloco `if (data.paymentMethod === "BITPAY_AO")` em `app/api/checkout/route.ts`.
-
-5. **Imagens**: as fotos usadas são placeholders do Unsplash (só para visualizar o layout). Substituir por fotografia real de produto antes de lançar — o domínio `images.unsplash.com` está autorizado em [next.config.ts](next.config.ts), vais precisar de adicionar o domínio onde alojares as fotos finais (ex: Vercel Blob, Cloudinary).
-
-6. **Notificações**: o requisito de emails/SMS/WhatsApp automáticos de confirmação ainda não está implementado — falta escolher um provedor (ex: Resend para email, WhatsApp Business API ou Twilio para mensagens).
-
-7. **Testar em telemóvel real** numa rede lenta, como pede o briefing — ainda não foi validado.
-
-## Como continuar
-
-```bash
-# 1. confirmar que as dependências instalaram bem
-npm install
-
-# 2. configurar a base de dados
-cp .env.example .env
-# preencher DATABASE_URL no .env
-
-npm run db:migrate
-npm run db:seed
-
-# 3. arrancar o site
-npm run dev
+```
+Vercel  ── site Next.js (páginas, API, pagamentos, notificações) ──► PostgreSQL
+   │                                                    ▲
+   │ POST /emit (HTTP, autenticado)                     │
+   ▼                                                    │
+Render  ── servidor socket.io (pasta realtime/) ──► browsers (cliente e equipa)
 ```
 
-Login do admin (depois do seed): `admin@deodaliadias.co.ao` / `deodalia2026` em `/admin/login`.
+- **O site é a única fonte de verdade.** O servidor de tempo real não tem base de dados: recebe eventos do site e entrega-os às salas certas.
+- **Salas**: `product:<id>` (pública, stock ao vivo), `order:<número>` (estado do pedido para a cliente), `chat:<id>` (conversa de apoio) e `admin` (novas encomendas, pagamentos, mensagens). As privadas exigem um token JWT curto, emitido pelo site.
+- **Se o tempo real estiver em baixo, nada falha**: o chat e o pagamento Express passam a atualizar-se por consulta periódica.
 
-## Decisões tomadas nesta sessão
+## Como correr localmente
 
-- **Base de dados**: PostgreSQL + Prisma (confirmado pelo utilizador).
-- **Hosting alvo**: Vercel (confirmado pelo utilizador).
-- **Pagamentos**: sandbox/placeholders por agora (confirmado pelo utilizador) — Stripe funcional em modo teste, BitPayAO como stub.
-- **Conta de cliente**: em vez de sistema de login com password para clientes, optei por consulta de pedido por número + telefone (`/minha-conta`), mais simples para o público com baixa literacia digital descrito no briefing. Se preferires contas com password, é uma mudança a discutir.
-- **Sem emojis na interface** — todos os ícones usam `lucide-react` (pedido explícito do utilizador a meio da sessão).
+```bash
+npm install
+cp .env.example .env        # preencher (ver secções abaixo)
+npm run db:migrate          # ou: npx prisma migrate deploy
+npm run db:seed             # 6 produtos + admin
+
+npm run dev                 # site em http://localhost:3000
+npm run dev:realtime        # (outro terminal) tempo real em http://localhost:4000
+```
+
+Admin: `/admin/login` → `admin@deodaliadias.co.ao` / `deodalia2026` (**mudar antes de produção**).
+
+A base local `deodalia` já está criada no PostgreSQL 16 desta máquina, separada da `fluvon_tv`.
+
+## O que está implementado
+
+**Loja**
+- Homepage (hero, curadoria do mês, história, avaliações e números, chamada final), coleções com filtros simples, página de produto com galeria e zoom, "Comprar agora" e "Adicionar ao carrinho", stock ao vivo e tabela de entregas.
+- Checkout linear com barra de progresso (Carrinho → Entrega → Pagamento → Confirmado): dados de entrega, escolha de pagamento, revisão final e confirmação com número do pedido e próximo passo.
+- **Stock**: é reservado na mesma transação que cria a encomenda (nunca se vende o que não existe) e devolvido quando uma encomenda é cancelada ou o pagamento expira, sem risco de devolver duas vezes.
+- Entregas por província em 3 zonas, com preço e prazo ([lib/shipping.ts](lib/shipping.ts)).
+- "Os meus pedidos": pesquisa por número e telefone (aceita qualquer formato, ex.: `+244 923…`), com a linha do tempo "Recebido → Em preparação → A caminho → Entregue" a atualizar ao vivo.
+- Botão "Precisas de ajuda?", com chat no site, WhatsApp e chamada telefónica.
+- Animações de entrada ao fazer scroll (CSS nativo, com alternativa `IntersectionObserver`; respeitam `prefers-reduced-motion`), imagens AVIF/WebP e layout pensado primeiro para telemóvel.
+
+**Pagamentos**
+- **Stripe** (cartão): Checkout Session em USD, porque o Stripe não aceita AOA. A taxa de câmbio é fixa em [lib/exchange.ts](lib/exchange.ts) e a cliente vê o valor aproximado em dólares antes de pagar. O pagamento é confirmado por webhook **e** por consulta direta na página de confirmação.
+- **BitPay** ([lib/bitpay.ts](lib/bitpay.ts)): Payment Intents, com tudo dentro do site.
+  - *Multicaixa Express*: a cliente aprova na app e o ecrã atualiza sozinho.
+  - *Referência Multicaixa*: mostramos entidade, referência e montante, com botões "Copiar"; a encomenda fica guardada até 72 h.
+  - Se o Express for recusado, a cliente pode tentar outra vez ou mudar para Referência, sem perder a encomenda.
+  - Webhook assinado (`BitPay-Signature`, HMAC com tolerância de 600 s) em `/api/webhooks/bitpay`.
+  - Sem chave BitPay, funciona em modo manual: a equipa carrega em "Confirmar pagamento recebido".
+
+**Notificações** ([lib/notifications.ts](lib/notifications.ts)): encomenda recebida (com a referência Multicaixa, quando se aplica), pagamento confirmado e cada mudança de estado, por WhatsApp (Meta Cloud API), SMS (Twilio, só se não houver WhatsApp) e email (Resend). Cada canal liga-se sozinho quando as suas chaves existem; sem elas, a mensagem só fica no log.
+
+**Painel** (`/admin`, também usável no telemóvel)
+- Painel com o que precisa de atenção: encomendas para preparar, pagamentos por confirmar, mensagens por responder, vendas do mês e stock a acabar.
+- Encomendas com filtros e pesquisa; página de detalhe com morada, botões "Ligar" e "WhatsApp", mudança de estado e confirmação manual do pagamento.
+- Conversas do chat, com respostas em tempo real.
+- Produtos: criar e editar, com **fotos carregadas do telemóvel ou do computador** (Uploadthing), foto principal e ordem.
+- Avisos em tempo real (toast e som discreto) para novas encomendas e mensagens.
+
+## Testes feitos (28/09/2026)
+
+- **Ponta a ponta com o site a correr (45/45)**:
+  - páginas públicas e do admin;
+  - reserva e devolução de stock;
+  - Express aprovado (`923000000`) e recusado (`923000001`), com nova tentativa por Referência;
+  - sessão Stripe de teste real;
+  - seguimento do pedido;
+  - regras do admin (sem sessão, estado inválido, cancelar duas vezes, reabrir);
+  - chat;
+  - eventos em tempo real.
+- **Servidor de tempo real (13/13)**: salas públicas e privadas, tokens falsos ou de outra encomenda, e `/emit` sem a chave certa.
+- **BitPay (10/10)**: verificação de assinatura do webhook e estados reais no sandbox.
+- `eslint` limpo e `next build` a compilar.
+- **Ainda não testado**: um telemóvel real numa rede lenta, e as notificações reais (não há chaves de WhatsApp, SMS ou email).
+
+## Deploy
+
+**Vercel (site)**: importar o repositório e definir as variáveis do `.env.example`. Obrigatórias: `DATABASE_URL`, `ADMIN_SESSION_SECRET` (o site recusa arrancar o admin sem ela em produção) e `NEXT_PUBLIC_SITE_URL`. Correr `npx prisma migrate deploy` contra a base de produção (ex.: Neon).
+
+**Render (tempo real)**: o [render.yaml](render.yaml) já define o serviço. Definir `REALTIME_SECRET` (igual ao da Vercel) e `ALLOWED_ORIGINS` (domínio do site). Na Vercel: `REALTIME_SERVER_URL` e `NEXT_PUBLIC_REALTIME_URL` com o URL do Render. Usar o plano *starter*: o gratuito adormece e corta as ligações.
+
+**Webhooks a registar**
+- Stripe → `https://<site>/api/webhooks/stripe`, com os eventos `checkout.session.completed`, `checkout.session.expired`, `checkout.session.async_payment_succeeded` e `checkout.session.async_payment_failed`.
+- BitPay → `https://<site>/api/webhooks/bitpay` (painel BitPay → Developers → Webhooks) e copiar o `whsec_…` para `BITPAY_WEBHOOK_SECRET`.
+
+## O que falta (depende de vocês)
+
+1. **BitPay em produção**: a BitPay ainda só tem sandbox (aguarda a certificação da EMIS). Quando abrir, trocar `BITPAY_BASE_URL` para `https://api.bitpay.ao/v1` e usar a `sk_live_…`.
+2. **`BITPAY_WEBHOOK_SECRET` e `STRIPE_WEBHOOK_SECRET`** por preencher. Localmente, o pagamento é confirmado por consulta direta, por isso funciona sem eles.
+3. **Fotografia e textos reais**: as imagens são placeholders do Unsplash. Os testemunhos e números da homepage ([lib/site-content.ts](lib/site-content.ts)) são **exemplos** e têm de ser substituídos por avaliações reais antes do lançamento.
+4. **Contactos reais**: `NEXT_PUBLIC_WHATSAPP_NUMBER` e `NEXT_PUBLIC_SUPPORT_PHONE_DISPLAY` ainda têm o número placeholder.
+5. **Notificações**: criar contas Resend, WhatsApp Business (Meta; é preciso um modelo de mensagem aprovado, com uma variável `{{1}}`) e/ou Twilio, e preencher as chaves.
+6. **Taxa AOA→USD** fixa (950) em [lib/exchange.ts](lib/exchange.ts): atualizar regularmente ou ligar a uma fonte de câmbio.
+7. **Mudar a password do admin** do seed.
+8. **Testar num telemóvel real** com rede móvel.
+
+## Decisões
+
+- PostgreSQL + Prisma 7 (driver adapter `@prisma/adapter-pg`; a ligação está em [prisma.config.ts](prisma.config.ts)). A instalação falhava antes porque o Prisma 7 deixou de aceitar `url` no `schema.prisma`.
+- Hosting: Vercel (site) + Render (socket.io), porque a Vercel não mantém ligações WebSocket.
+- Sem contas com password para clientes: o pedido é consultado por número e telefone, o que é mais simples para quem compra online pela primeira vez.
+- BitPay integrada por Payment Intents, e não pelo checkout alojado, para que todo o pagamento aconteça dentro do site.
+- Sem emojis na interface: os ícones são `lucide-react`.
+- Paleta estrita: até os erros usam castanho e taupe, nunca vermelho.

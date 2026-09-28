@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Trash2 } from "lucide-react";
+import { ProductImages } from "./ProductImages";
 
 export type ProductFormValues = {
   id?: string;
@@ -47,6 +48,7 @@ export function ProductForm({
   const router = useRouter();
   const [values, setValues] = useState<ProductFormValues>(initial ?? EMPTY);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   function update<K extends keyof ProductFormValues>(key: K, value: ProductFormValues[K]) {
@@ -58,13 +60,7 @@ export function ProductForm({
     setSaving(true);
     setError(null);
 
-    const payload = {
-      ...values,
-      imageUrls: values.imageUrls
-        .split(",")
-        .map((u) => u.trim())
-        .filter(Boolean),
-    };
+    const payload = { ...values, imageUrls: parseImageUrls(values.imageUrls) };
 
     const res = await fetch(
       values.id ? `/api/admin/products/${values.id}` : "/api/admin/products",
@@ -89,7 +85,12 @@ export function ProductForm({
   async function handleDelete() {
     if (!values.id) return;
     if (!confirm("Tens a certeza que queres eliminar este produto?")) return;
-    await fetch(`/api/admin/products/${values.id}`, { method: "DELETE" });
+    const res = await fetch(`/api/admin/products/${values.id}`, { method: "DELETE" });
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      setError(json.error ?? "Não foi possível eliminar o produto.");
+      return;
+    }
     router.push("/admin/produtos");
     router.refresh();
   }
@@ -101,17 +102,25 @@ export function ProductForm({
           <input
             required
             value={values.name}
-            onChange={(e) => update("name", e.target.value)}
+            onChange={(e) => {
+              const name = e.target.value;
+              setValues((v) => ({
+                ...v,
+                name,
+                // Enquanto o endereço não for editado à mão, acompanha o nome.
+                slug: !v.id && (v.slug === "" || v.slug === slugify(v.name)) ? slugify(name) : v.slug,
+              }));
+            }}
             className="input"
           />
         </Field>
-        <Field label="Slug (URL)">
+        <Field label="Endereço da página (gerado a partir do nome)">
           <input
             required
             value={values.slug}
-            onChange={(e) => update("slug", e.target.value)}
+            onChange={(e) => update("slug", slugify(e.target.value))}
             className="input"
-            placeholder="ex: oleo-facial-baobab"
+            placeholder="ex: oleo-facial-baoba"
           />
         </Field>
       </div>
@@ -189,14 +198,11 @@ export function ProductForm({
         </select>
       </Field>
 
-      <Field label="Imagens (URLs separadas por vírgula)">
-        <textarea
-          value={values.imageUrls}
-          onChange={(e) => update("imageUrls", e.target.value)}
-          className="input min-h-20"
-          placeholder="https://..., https://..."
-        />
-      </Field>
+      <ProductImages
+        urls={parseImageUrls(values.imageUrls)}
+        onChange={(urls) => update("imageUrls", urls.join("\n"))}
+        onUploadingChange={setUploading}
+      />
 
       <div className="flex flex-wrap gap-6">
         <Checkbox
@@ -217,7 +223,7 @@ export function ProductForm({
       </div>
 
       {error && (
-        <p className="rounded-lg bg-red-50 px-4 py-3 font-body text-sm text-red-700">
+        <p role="alert" className="rounded-xl border border-ink/30 bg-taupe/15 px-4 py-3 font-body text-sm text-ink">
           {error}
         </p>
       )}
@@ -227,7 +233,7 @@ export function ProductForm({
           <button
             type="button"
             onClick={handleDelete}
-            className="flex items-center gap-2 font-body text-sm text-red-600"
+            className="flex items-center gap-2 font-body text-sm text-ink/70 underline underline-offset-4 hover:text-ink"
           >
             <Trash2 className="h-4 w-4" aria-hidden="true" />
             Eliminar produto
@@ -237,7 +243,7 @@ export function ProductForm({
         )}
         <button
           type="submit"
-          disabled={saving}
+          disabled={saving || uploading}
           className="flex h-12 items-center justify-center gap-2 rounded-full bg-ink px-6 font-body text-sm tracking-wide-label uppercase text-cream transition hover:bg-gold disabled:opacity-60"
         >
           {saving && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
@@ -277,4 +283,20 @@ function Checkbox({
       {label}
     </label>
   );
+}
+
+function parseImageUrls(value: string): string[] {
+  return value
+    .split(/[\n,]/)
+    .map((u) => u.trim())
+    .filter(Boolean);
+}
+
+function slugify(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }

@@ -3,7 +3,8 @@ import { Cormorant_Garamond, Jost } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { SupportWidget } from "@/components/SupportWidget";
+import { RevealOnScroll } from "@/components/RevealOnScroll";
 import { CartProvider } from "@/lib/cart-context";
 
 const cormorant = Cormorant_Garamond({
@@ -35,7 +36,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <Header />
           <main className="flex-1">{children}</main>
           <Footer />
-          <WhatsAppButton />
+          <SupportWidget />
+          <RevealOnScroll />
         </CartProvider>
       </body>
     </html>

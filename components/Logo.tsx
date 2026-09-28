@@ -25,19 +25,21 @@ export function LogoMark({ className = "" }: { className?: string }) {
 export function Logo({
   className = "",
   markClassName = "h-8 w-8",
+  wordmarkClassName = "text-xl",
 }: {
   className?: string;
   markClassName?: string;
+  wordmarkClassName?: string;
 }) {
   return (
     <Link
       href="/"
-      className={`inline-flex flex-col items-center gap-1 text-ink ${className}`}
+      className={`inline-flex flex-col items-center gap-1.5 text-ink ${className}`}
       aria-label="Deodália Dias — Beauty & Co., ir para a homepage"
     >
       <LogoMark className={markClassName} />
-      <span className="font-display text-xl leading-none">Deodália Dias</span>
-      <span className="font-body text-[0.6rem] tracking-wordmark uppercase text-taupe">
+      <span className={`font-display leading-none ${wordmarkClassName}`}>Deodália Dias</span>
+      <span className="font-body text-[0.6rem] tracking-wordmark text-taupe uppercase">
         Beauty &amp; Co.
       </span>
     </Link>

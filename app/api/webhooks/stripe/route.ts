@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
-import { prisma } from "@/lib/prisma";
+import { cancelUnpaidOrder, markOrderPaid } from "@/lib/orders";
 
 export async function POST(request: NextRequest) {
   const signature = request.headers.get("stripe-signature");
@@ -19,14 +19,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Assinatura inválida" }, { status: 400 });
   }
 
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object as Stripe.Checkout.Session;
-    const orderId = session.metadata?.orderId;
-    if (orderId) {
-      await prisma.order.update({
-        where: { id: orderId },
-        data: { paymentStatus: "PAGO", status: "PAGO" },
-      });
+  const session = event.data.object as Stripe.Checkout.Session;
+  const orderId = session.metadata?.orderId;
+
+  if (orderId) {
+    if (event.type === "checkout.session.completed" && session.payment_status === "paid") {
+      await markOrderPaid(orderId);
+    } else if (event.type === "checkout.session.async_payment_succeeded") {
+      await markOrderPaid(orderId);
+    } else if (
+      event.type === "checkout.session.expired" ||
+      event.type === "checkout.session.async_payment_failed"
+    ) {
+      await cancelUnpaidOrder(orderId);
     }
   }
 

@@ -38,7 +38,7 @@ export default async function EditProductPage({
           featured: product.featured,
           curatedMonth: product.curatedMonth,
           active: product.active,
-          imageUrls: product.images.map((i) => i.url).join(", "),
+          imageUrls: product.images.map((i) => i.url).join("\n"),
         }}
       />
     </div>

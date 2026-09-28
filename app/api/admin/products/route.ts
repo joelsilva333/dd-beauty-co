@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAdminSession } from "@/lib/auth";
+import { productData, productErrorMessage, productSchema } from "@/lib/product-schema";
 
 export async function GET() {
   const session = await getAdminSession();
@@ -17,33 +18,17 @@ export async function POST(request: NextRequest) {
   const session = await getAdminSession();
   if (!session) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
-  const body = await request.json();
+  const parsed = productSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Dados inválidos" }, { status: 400 });
+  }
 
-  const product = await prisma.product.create({
-    data: {
-      name: body.name,
-      slug: body.slug,
-      shortDesc: body.shortDesc,
-      story: body.story,
-      ritual: body.ritual || null,
-      priceCents: Math.round(Number(body.price) * 100),
-      compareAtCents: body.compareAtPrice
-        ? Math.round(Number(body.compareAtPrice) * 100)
-        : null,
-      stock: Number(body.stock) || 0,
-      featured: Boolean(body.featured),
-      curatedMonth: Boolean(body.curatedMonth),
-      active: body.active !== false,
-      categoryId: body.categoryId || null,
-      images: {
-        create: (body.imageUrls as string[]).map((url, index) => ({
-          url,
-          alt: body.name,
-          order: index,
-        })),
-      },
-    },
-  });
-
-  return NextResponse.json({ product });
+  try {
+    const product = await prisma.product.create({ data: productData(parsed.data) });
+    return NextResponse.json({ product });
+  } catch (error) {
+    const message = productErrorMessage(error);
+    if (message) return NextResponse.json({ error: message }, { status: 409 });
+    throw error;
+  }
 }

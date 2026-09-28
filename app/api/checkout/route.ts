@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
 import { checkoutSchema } from "@/lib/checkout-schema";
-import { calculateShippingCents } from "@/lib/shipping";
-import { generateOrderNumber } from "@/lib/order-number";
 import { aoaCentsToUsdCents } from "@/lib/exchange";
+import { cancelUnpaidOrder, createOrder, OrderError } from "@/lib/orders";
+import { BitpayError, bitpayConfigured, startBitpayPayment } from "@/lib/bitpay";
+import { normalizePhone } from "@/lib/angola";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
   const parsed = checkoutSchema.safeParse(body);
 
   if (!parsed.success) {
@@ -17,101 +18,81 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const data = parsed.data;
-
-  const products = await prisma.product.findMany({
-    where: { id: { in: data.items.map((i) => i.productId) }, active: true },
-    include: { images: { orderBy: { order: "asc" }, take: 1 } },
-  });
-
-  if (products.length === 0) {
-    return NextResponse.json({ error: "Carrinho inválido" }, { status: 400 });
+  let created;
+  try {
+    created = await createOrder(parsed.data);
+  } catch (error) {
+    if (error instanceof OrderError) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
+    throw error;
   }
 
-  const orderItemsData = data.items.flatMap((item) => {
-    const product = products.find((p) => p.id === item.productId);
-    if (!product) return [];
-    return [
-      {
-        productId: product.id,
-        quantity: item.quantity,
-        priceCents: product.priceCents,
-        name: product.name,
-      },
-    ];
-  });
+  const { order, products } = created;
+  const origin = request.nextUrl.origin;
+  const confirmationUrl = `/checkout/confirmado/${order.orderNumber}`;
 
-  const subtotalCents = orderItemsData.reduce(
-    (sum, item) => sum + item.priceCents * item.quantity,
-    0,
-  );
-  const shippingCents = calculateShippingCents(data.province);
-  const totalCents = subtotalCents + shippingCents;
-  const orderNumber = generateOrderNumber();
-
-  const order = await prisma.order.create({
-    data: {
-      orderNumber,
-      customerName: data.customerName,
-      customerPhone: data.customerPhone,
-      customerEmail: data.customerEmail || null,
-      province: data.province,
-      municipality: data.municipality,
-      addressLine: data.addressLine,
-      addressNotes: data.addressNotes || null,
-      subtotalCents,
-      shippingCents,
-      totalCents,
-      paymentMethod: data.paymentMethod,
-      items: { create: orderItemsData },
-    },
-  });
-
-  if (data.paymentMethod === "STRIPE") {
-    const origin = request.nextUrl.origin;
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      payment_method_types: ["card"],
-      line_items: orderItemsData.map((item) => {
-        const product = products.find((p) => p.id === item.productId);
-        return {
-          quantity: item.quantity,
-          price_data: {
-            currency: "usd",
-            unit_amount: aoaCentsToUsdCents(item.priceCents),
-            product_data: {
-              name: item.name,
-              images: product?.images[0] ? [product.images[0].url] : undefined,
-            },
-          },
-        };
-      }),
-      shipping_options: [
-        {
-          shipping_rate_data: {
-            type: "fixed_amount",
-            fixed_amount: {
-              amount: aoaCentsToUsdCents(shippingCents),
+  if (order.paymentMethod === "STRIPE") {
+    try {
+      const session = await stripe.checkout.sessions.create({
+        mode: "payment",
+        payment_method_types: ["card"],
+        locale: "pt",
+        line_items: order.items.map((item) => {
+          const image = products.find((p) => p.id === item.productId)?.images[0]?.url;
+          return {
+            quantity: item.quantity,
+            price_data: {
               currency: "usd",
+              unit_amount: aoaCentsToUsdCents(item.priceCents),
+              product_data: { name: item.name, images: image ? [image] : undefined },
             },
-            display_name: "Entrega em Angola",
+          };
+        }),
+        shipping_options: [
+          {
+            shipping_rate_data: {
+              type: "fixed_amount",
+              fixed_amount: { amount: aoaCentsToUsdCents(order.shippingCents), currency: "usd" },
+              display_name: "Entrega em Angola",
+            },
           },
-        },
-      ],
-      success_url: `${origin}/checkout/confirmado/${order.orderNumber}`,
-      cancel_url: `${origin}/checkout`,
-      metadata: { orderId: order.id, orderNumber: order.orderNumber },
-    });
+        ],
+        // O stock fica reservado enquanto a sessão está aberta; ao expirar é devolvido (webhook).
+        expires_at: Math.floor(Date.now() / 1000) + 60 * 60,
+        success_url: `${origin}${confirmationUrl}`,
+        cancel_url: `${origin}/checkout?pagamento=cancelado`,
+        metadata: { orderId: order.id, orderNumber: order.orderNumber },
+      });
 
-    await prisma.order.update({
-      where: { id: order.id },
-      data: { stripeSessionId: session.id },
-    });
+      await prisma.order.update({
+        where: { id: order.id },
+        data: { stripeSessionId: session.id },
+      });
 
-    return NextResponse.json({ redirectUrl: session.url });
+      return NextResponse.json({ redirectUrl: session.url });
+    } catch (error) {
+      console.error("[checkout] Stripe falhou:", error);
+      await cancelUnpaidOrder(order.id);
+      return NextResponse.json(
+        { error: "Não conseguimos abrir o pagamento por cartão. Tenta novamente ou escolhe BitPayAO." },
+        { status: 502 },
+      );
+    }
   }
 
-  return NextResponse.json({
-    redirectUrl: `/checkout/confirmado/${order.orderNumber}`,
-  });
+  // Sem credenciais BitPay: modo manual (a equipa confirma o pagamento no painel).
+  if (bitpayConfigured()) {
+    try {
+      const mobile = parsed.data.bitpayMobile ? normalizePhone(parsed.data.bitpayMobile) : undefined;
+      await startBitpayPayment(order, parsed.data.bitpayMethod ?? "multicaixa_express", mobile);
+    } catch (error) {
+      await cancelUnpaidOrder(order.id);
+      const message =
+        error instanceof BitpayError ? error.message : "Não conseguimos iniciar o pagamento. Tenta novamente.";
+      return NextResponse.json({ error: message }, { status: 502 });
+    }
+  }
+
+  return NextResponse.json({ redirectUrl: confirmationUrl });
 }
