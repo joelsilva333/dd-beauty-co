@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+:root {
+  --color-ink: #2e2019;
+  --color-cream: #f7f2ea;
+  --color-taupe: #a98f7c;
+  --color-gold: #b08d57;
+  --color-white: #ffffff;
+}
+
+@theme inline {
+  --color-ink: var(--color-ink);
+  --color-cream: var(--color-cream);
+  --color-taupe: var(--color-taupe);
+  --color-gold: var(--color-gold);
+
+  --font-display: var(--font-cormorant), serif;
+  --font-body: var(--font-jost), sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-cream);
+  color: var(--color-ink);
+}
+
+::selection {
+  background-color: var(--color-gold);
+  color: var(--color-white);
+}
+
+.tracking-wordmark {
+  letter-spacing: 0.28em;
+}
+
+.tracking-wide-label {
+  letter-spacing: 0.14em;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .fade-up {
+    animation: fade-up 0.7s ease-out both;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

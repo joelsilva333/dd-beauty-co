@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrderStatus {
+  PENDENTE
+  PAGO
+  EM_PREPARACAO
+  A_CAMINHO
+  ENTREGUE
+  CANCELADO
+}
+
+enum PaymentMethod {
+  STRIPE
+  BITPAY_AO
+}
+
+enum PaymentStatus {
+  PENDENTE
+  PAGO
+  FALHOU
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  order     Int       @default(0)
+  products  Product[]
+  createdAt DateTime  @default(now())
+}
+
+model Product {
+  id            String         @id @default(cuid())
+  name          String
+  slug          String         @unique
+  shortDesc     String
+  story         String
+  ritual        String?
+  priceCents    Int
+  compareAtCents Int?
+  currency      String         @default("AOA")
+  stock         Int            @default(0)
+  featured      Boolean        @default(false)
+  curatedMonth  Boolean        @default(false)
+  active        Boolean        @default(true)
+  categoryId    String?
+  category      Category?      @relation(fields: [categoryId], references: [id])
+  images        ProductImage[]
+  orderItems    OrderItem[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  url       String
+  alt       String
+  order     Int     @default(0)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Order {
+  id              String        @id @default(cuid())
+  orderNumber     String        @unique
+  customerName    String
+  customerPhone   String
+  customerEmail   String?
+  province        String
+  municipality    String
+  addressLine     String
+  addressNotes    String?
+  items           OrderItem[]
+  subtotalCents   Int
+  shippingCents   Int           @default(0)
+  totalCents      Int
+  currency        String        @default("AOA")
+  paymentMethod   PaymentMethod
+  paymentStatus   PaymentStatus @default(PENDENTE)
+  stripeSessionId String?
+  status          OrderStatus   @default(PENDENTE)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model OrderItem {
+  id         String  @id @default(cuid())
+  orderId    String
+  order      Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product @relation(fields: [productId], references: [id])
+  quantity   Int
+  priceCents Int
+  name       String
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
