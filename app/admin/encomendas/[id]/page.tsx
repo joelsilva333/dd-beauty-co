@@ -59,6 +59,7 @@ export default async function AdminOrderDetailPage({
             <span>
               {order.addressLine}
               <br />
+              {order.bairro && <>{order.bairro}, </>}
               {order.municipality}, {order.province}
               {order.addressNotes && (
                 <>

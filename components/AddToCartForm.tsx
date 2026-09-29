@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, CheckCircle2, Minus, Plus, ShoppingBag } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
 import { useRealtime } from "@/lib/realtime-client";
+import { formatKwanza } from "@/lib/currency";
 
 export function AddToCartForm({
   productId,
@@ -80,6 +81,9 @@ export function AddToCartForm({
             <Plus className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
+        <span className="font-body text-sm text-ink/60" aria-live="polite">
+          Subtotal: <strong className="text-ink">{formatKwanza(priceCents * safeQuantity)}</strong>
+        </span>
       </div>
 
       {available === 0 ? (

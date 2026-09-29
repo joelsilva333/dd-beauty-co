@@ -9,6 +9,7 @@ export const checkoutSchema = z.object({
   customerEmail: z.email("O email não parece correto").optional().or(z.literal("")),
   province: z.string().refine(isAngolaProvince, "Escolhe a tua província"),
   municipality: z.string().trim().min(2, "Indica o teu município"),
+  bairro: z.string().trim().min(2, "Indica o teu bairro"),
   addressLine: z.string().trim().min(5, "Indica a tua morada"),
   addressNotes: z.string().max(500).optional(),
   paymentMethod: z.enum(["STRIPE", "BITPAY_AO"], "Escolhe como queres pagar"),

@@ -8,6 +8,7 @@ import { SITE } from "@/lib/site-config";
 import { AddToCartForm } from "@/components/AddToCartForm";
 import { ProductGallery } from "@/components/ProductGallery";
 import { ShareButton } from "@/components/ShareButton";
+import { PaymentMethods } from "@/components/PaymentMethods";
 
 export const dynamic = "force-dynamic";
 
@@ -140,13 +141,15 @@ export default async function ProductPage({
             <p className="pl-6">Vamos ligar-te para combinar o dia e a hora da entrega.</p>
             <p className="flex items-center gap-2.5">
               <ShieldCheck className="h-4 w-4 text-gold" aria-hidden="true" strokeWidth={1.5} />
-              Pagamento seguro por cartão ou BitPay.
+              Pagamento 100% seguro.
             </p>
             <p className="flex items-center gap-2.5">
               <MessageCircle className="h-4 w-4 text-gold" aria-hidden="true" strokeWidth={1.5} />
               Dúvidas? Usa o botão “Precisas de ajuda?”.
             </p>
           </div>
+
+          <PaymentMethods />
 
           <ShareButton url={productUrl} title={product.name} />
         </div>

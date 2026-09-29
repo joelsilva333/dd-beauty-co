@@ -76,7 +76,8 @@ export async function createOrder(data: CheckoutInput) {
   }));
 
   const subtotalCents = itemsData.reduce((sum, i) => sum + i.priceCents * i.quantity, 0);
-  const shippingCents = calculateShippingCents(data.province);
+  const totalQuantity = itemsData.reduce((sum, i) => sum + i.quantity, 0);
+  const shippingCents = calculateShippingCents(data.province, totalQuantity);
 
   for (let attempt = 0; ; attempt++) {
     try {
@@ -102,6 +103,7 @@ export async function createOrder(data: CheckoutInput) {
             customerEmail: data.customerEmail || null,
             province: data.province,
             municipality: data.municipality.trim(),
+            bairro: data.bairro.trim(),
             addressLine: data.addressLine.trim(),
             addressNotes: data.addressNotes?.trim() || null,
             subtotalCents,

@@ -17,10 +17,10 @@ import {
 } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
 import { formatKwanza } from "@/lib/currency";
-import { ANGOLA_PROVINCES } from "@/lib/angola";
 import { calculateShippingCents, estimateDeliveryDays } from "@/lib/shipping";
 import { aoaCentsToUsdCents } from "@/lib/exchange";
 import { CheckoutSteps } from "@/components/CheckoutSteps";
+import { LocationFields } from "@/components/LocationFields";
 
 type DeliveryData = {
   customerName: string;
@@ -28,6 +28,7 @@ type DeliveryData = {
   customerEmail: string;
   province: string;
   municipality: string;
+  bairro: string;
   addressLine: string;
   addressNotes: string;
 };
@@ -38,6 +39,7 @@ const EMPTY_DELIVERY: DeliveryData = {
   customerEmail: "",
   province: "",
   municipality: "",
+  bairro: "",
   addressLine: "",
   addressNotes: "",
 };
@@ -65,8 +67,9 @@ export default function CheckoutPage({
     if (hydrated && items.length === 0) router.replace("/carrinho");
   }, [hydrated, items, router]);
 
+  const totalQuantity = items.reduce((sum, i) => sum + i.quantity, 0);
   const shippingCents = delivery.province
-    ? calculateShippingCents(delivery.province)
+    ? calculateShippingCents(delivery.province, totalQuantity)
     : 0;
   const totalWithShipping = totalCents + shippingCents;
 
@@ -76,6 +79,7 @@ export default function CheckoutPage({
       delivery.customerPhone.trim().length > 8 &&
       delivery.province.trim().length > 1 &&
       delivery.municipality.trim().length > 1 &&
+      delivery.bairro.trim().length > 1 &&
       delivery.addressLine.trim().length > 4,
     [delivery],
   );
@@ -97,6 +101,7 @@ export default function CheckoutPage({
           customerEmail: delivery.customerEmail || undefined,
           province: delivery.province,
           municipality: delivery.municipality,
+          bairro: delivery.bairro,
           addressLine: delivery.addressLine,
           addressNotes: delivery.addressNotes || undefined,
           paymentMethod,
@@ -192,37 +197,14 @@ export default function CheckoutPage({
               />
             </Field>
 
-            <div className="grid gap-6 sm:grid-cols-2">
-              <Field label="Província">
-                <select
-                  required
-                  value={delivery.province}
-                  onChange={(e) =>
-                    setDelivery((d) => ({ ...d, province: e.target.value }))
-                  }
-                  className="input"
-                >
-                  <option value="">Escolhe a província</option>
-                  {ANGOLA_PROVINCES.map((p) => (
-                    <option key={p} value={p}>
-                      {p}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-
-              <Field label="Município">
-                <input
-                  required
-                  value={delivery.municipality}
-                  onChange={(e) =>
-                    setDelivery((d) => ({ ...d, municipality: e.target.value }))
-                  }
-                  className="input"
-                  placeholder="O teu município"
-                />
-              </Field>
-            </div>
+            <LocationFields
+              value={{
+                province: delivery.province,
+                municipality: delivery.municipality,
+                bairro: delivery.bairro,
+              }}
+              onChange={(location) => setDelivery((d) => ({ ...d, ...location }))}
+            />
 
             <Field label="Morada / ponto de referência">
               <input
@@ -232,7 +214,7 @@ export default function CheckoutPage({
                   setDelivery((d) => ({ ...d, addressLine: e.target.value }))
                 }
                 className="input"
-                placeholder="Rua, número, bairro..."
+                placeholder="Rua, número, ponto de referência..."
               />
             </Field>
 
@@ -249,8 +231,9 @@ export default function CheckoutPage({
 
             {delivery.province && (
               <p className="font-body text-sm text-ink/60">
-                Tempo estimado de entrega em {delivery.province}:{" "}
-                {estimateDeliveryDays(delivery.province)}.
+                Entrega em {delivery.province}: {estimateDeliveryDays(delivery.province)} ·{" "}
+                {formatKwanza(shippingCents)} de portes ({totalQuantity}{" "}
+                {totalQuantity === 1 ? "produto" : "produtos"}).
               </p>
             )}
 
@@ -260,7 +243,7 @@ export default function CheckoutPage({
             </button>
             {!deliveryValid && (
               <p className="text-center font-body text-sm text-ink/50">
-                Preenche o nome, telefone, província, município e morada para continuar.
+                Preenche o nome, telefone, província, município, bairro e morada para continuar.
               </p>
             )}
           </form>
@@ -274,24 +257,25 @@ export default function CheckoutPage({
               Como preferes pagar?
             </h1>
             <p className="mt-2 font-body text-sm text-ink/55">
-              As duas opções são seguras. Escolhe a que for mais fácil para ti.
+              Todas as opções são seguras. Escolhe a que for mais fácil para ti — e recebes a
+              encomenda no conforto da tua casa.
             </p>
           </div>
 
           <div className="flex flex-col gap-3">
             <PaymentOption
-              icon={<CreditCard className="h-5 w-5" aria-hidden="true" strokeWidth={1.5} />}
-              title="Cartão Visa ou Mastercard"
-              description="Pagas numa página segura do Stripe, a plataforma de pagamentos internacional."
-              selected={paymentMethod === "STRIPE"}
-              onSelect={() => setPaymentMethod("STRIPE")}
-            />
-            <PaymentOption
               icon={<Landmark className="h-5 w-5" aria-hidden="true" strokeWidth={1.5} />}
-              title="BitPay (pagamento angolano)"
-              description="Pagas em Kwanza com os métodos locais que já conheces."
+              title="Pagamento em Kwanza (Angola)"
+              description="Multicaixa Express (aprovas no telemóvel) ou Referência Multicaixa (pagas no ATM ou na app do banco)."
               selected={paymentMethod === "BITPAY_AO"}
               onSelect={() => setPaymentMethod("BITPAY_AO")}
+            />
+            <PaymentOption
+              icon={<CreditCard className="h-5 w-5" aria-hidden="true" strokeWidth={1.5} />}
+              title="Cartão internacional"
+              description="Visa, Mastercard e outros cartões internacionais, numa página de pagamento segura."
+              selected={paymentMethod === "STRIPE"}
+              onSelect={() => setPaymentMethod("STRIPE")}
             />
           </div>
 
@@ -385,7 +369,7 @@ export default function CheckoutPage({
             <p className="font-medium text-ink">Entregar a</p>
             <p className="mt-1">{delivery.customerName} · {delivery.customerPhone}</p>
             <p>
-              {delivery.addressLine}, {delivery.municipality}, {delivery.province}
+              {delivery.addressLine}, {delivery.bairro}, {delivery.municipality}, {delivery.province}
             </p>
             <p className="mt-2">Chega em {estimateDeliveryDays(delivery.province)}.</p>
             <button type="button" onClick={() => setStep(1)} className="link-underline mt-3 underline">
@@ -409,7 +393,7 @@ export default function CheckoutPage({
               </p>
               {paymentMethod === "STRIPE" ? (
                 <p className="mt-1">
-                  Ao confirmar, abrimos a página segura do Stripe. O cartão é cobrado em
+                  Ao confirmar, abrimos uma página de pagamento segura. O cartão é cobrado em
                   dólares: cerca de {(aoaCentsToUsdCents(totalWithShipping) / 100).toFixed(2)} USD
                   (o teu banco pode aplicar a taxa de câmbio dele).
                 </p>

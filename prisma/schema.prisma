@@ -74,6 +74,7 @@ model Order {
   customerEmail      String?
   province           String
   municipality       String
+  bairro             String        @default("")
   addressLine        String
   addressNotes       String?
   items              OrderItem[]

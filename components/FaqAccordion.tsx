@@ -12,17 +12,17 @@ const FAQS = [
   {
     question: "Quais são as formas de pagamento?",
     answer:
-      "Aceitamos cartão internacional (Stripe) e BitPayAO, o método de pagamento local angolano. Escolhe a opção com que te sentires mais confortável.",
+      "Podes pagar em Kwanza com Multicaixa Express (aprovas no telemóvel) ou Referência Multicaixa (pagas no ATM ou na app do banco), ou com cartão internacional Visa/Mastercard. Escolhe a opção com que te sentires mais confortável.",
   },
   {
     question: "Quanto tempo demora a entrega?",
     answer:
-      "Em Luanda, a entrega demora entre 2 a 4 dias úteis. Nas restantes províncias, entre 5 a 10 dias úteis. Vamos sempre contactar-te para combinar a entrega.",
+      "Em Luanda, a entrega demora entre 2 a 4 dias úteis. Nas restantes províncias, entre 3 a 14 dias úteis, dependendo da distância. Recebes a encomenda no conforto da tua casa — vamos sempre ligar-te para combinar o dia e a hora.",
   },
   {
     question: "Posso pagar quando a encomenda chegar?",
     answer:
-      "De momento o pagamento é feito no site, através de cartão ou BitPayAO, para garantir a tua encomenda. Se tiveres dúvidas, fala connosco antes de finalizar a compra.",
+      "De momento o pagamento é feito no site, através de Multicaixa ou cartão, para garantir a tua encomenda. Se tiveres dúvidas, fala connosco antes de finalizar a compra.",
   },
   {
     question: "Como acompanho o estado do meu pedido?",
