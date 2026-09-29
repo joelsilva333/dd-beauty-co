@@ -2,13 +2,16 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { formatKwanza } from "@/lib/currency";
+import { StockQuickEdit } from "@/components/admin/StockQuickEdit";
 
 export const dynamic = "force-dynamic";
+
+const LOW_STOCK = 5;
 
 export default async function AdminProductsPage() {
   const products = await prisma.product.findMany({
     include: { images: true, category: true },
-    orderBy: { createdAt: "desc" },
+    orderBy: [{ stock: "asc" }, { createdAt: "desc" }],
   });
 
   return (
@@ -37,7 +40,12 @@ export default async function AdminProductsPage() {
           </thead>
           <tbody>
             {products.map((product) => (
-              <tr key={product.id} className="border-t border-taupe/15">
+              <tr
+                key={product.id}
+                className={`border-t border-taupe/15 ${
+                  product.stock <= LOW_STOCK ? "bg-gold/10" : ""
+                }`}
+              >
                 <td className="px-4 py-3">
                   <Link
                     href={`/admin/produtos/${product.id}`}
@@ -50,7 +58,9 @@ export default async function AdminProductsPage() {
                   {product.category?.name ?? "—"}
                 </td>
                 <td className="px-4 py-3">{formatKwanza(product.priceCents)}</td>
-                <td className="px-4 py-3">{product.stock}</td>
+                <td className="px-4 py-3">
+                  <StockQuickEdit productId={product.id} stock={product.stock} />
+                </td>
                 <td className="px-4 py-3">
                   <span
                     className={`rounded-full px-2.5 py-1 text-xs ${

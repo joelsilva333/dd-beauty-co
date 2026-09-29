@@ -7,6 +7,7 @@ import { SupportWidget } from "@/components/SupportWidget";
 import { RevealOnScroll } from "@/components/RevealOnScroll";
 import { CartProvider } from "@/lib/cart-context";
 import { SITE } from "@/lib/site-config";
+import { getAdminSession } from "@/lib/auth";
 
 const cormorant = Cormorant_Garamond({
   variable: "--font-cormorant",
@@ -57,7 +58,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // Serve para o Header mostrar sempre um atalho para o painel a quem já
+  // tem sessão de administração aberta, mesmo a navegar no site público.
+  const isAdmin = Boolean(await getAdminSession());
+
   return (
     <html
       lang="pt-AO"
@@ -65,7 +70,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col font-body">
         <CartProvider>
-          <Header />
+          <Header isAdmin={isAdmin} />
           <main className="flex-1">{children}</main>
           <Footer />
           <SupportWidget />

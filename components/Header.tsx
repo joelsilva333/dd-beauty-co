@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Menu, ShoppingBag, X } from "lucide-react";
+import { LayoutDashboard, Menu, ShoppingBag, X } from "lucide-react";
 import { Logo, LogoMark } from "./Logo";
 import { useCart } from "@/lib/cart-context";
 
@@ -13,7 +13,7 @@ const NAV_LINKS = [
   { href: "/contacto", label: "Ajuda" },
 ];
 
-export function Header() {
+export function Header({ isAdmin = false }: { isAdmin?: boolean }) {
   const [open, setOpen] = useState(false);
   const { totalItems } = useCart();
   const pathname = usePathname();
@@ -73,7 +73,20 @@ export function Header() {
           <Logo markClassName="hidden h-6 w-6 md:block" wordmarkClassName="text-base md:text-lg" />
         </div>
 
-        <div className="flex items-center justify-end">
+        <div className="flex items-center justify-end gap-1">
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="flex h-11 items-center gap-2 px-1 text-ink transition hover:text-ink/60"
+              aria-label="Ir para o painel de administração"
+              title="Painel de administração"
+            >
+              <LayoutDashboard className="h-5 w-5" aria-hidden="true" strokeWidth={1.5} />
+              <span className="hidden font-body text-[11px] font-medium tracking-[0.2em] uppercase lg:inline">
+                Painel
+              </span>
+            </Link>
+          )}
           <Link
             href="/carrinho"
             className="relative flex h-11 items-center gap-2 px-1 text-ink transition hover:text-ink/60"
@@ -134,6 +147,17 @@ export function Header() {
           >
             Os meus pedidos
           </Link>
+          {isAdmin && (
+            <Link
+              href="/admin"
+              onClick={() => setOpen(false)}
+              className="fade-up mt-3 flex items-center gap-2 font-body text-[11px] font-medium tracking-[0.22em] text-ink/60 uppercase"
+              style={{ animationDelay: open ? `${(NAV_LINKS.length + 1) * 60}ms` : undefined }}
+            >
+              <LayoutDashboard className="h-4 w-4" aria-hidden="true" strokeWidth={1.5} />
+              Painel de administração
+            </Link>
+          )}
         </nav>
       </div>
     </>

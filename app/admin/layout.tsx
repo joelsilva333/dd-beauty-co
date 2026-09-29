@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LayoutDashboard, MessagesSquare, Package, ShoppingCart, Tags } from "lucide-react";
+import { LayoutDashboard, MessagesSquare, Package, ShoppingCart, Tags, Wallet } from "lucide-react";
 import { getAdminSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createRealtimeToken, rooms } from "@/lib/realtime";
@@ -29,6 +29,7 @@ export default async function AdminLayout({
     { href: "/admin/conversas", label: "Conversas", icon: MessagesSquare, badge: unreadChats },
     { href: "/admin/produtos", label: "Produtos", icon: Package, badge: 0 },
     { href: "/admin/categorias", label: "Categorias", icon: Tags, badge: 0 },
+    { href: "/admin/financeiro", label: "Financeiro", icon: Wallet, badge: 0 },
   ];
 
   return (
