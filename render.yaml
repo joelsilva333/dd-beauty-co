@@ -5,9 +5,10 @@ services:
     name: dd-beauty-realtime
     runtime: node
     rootDir: realtime
-    # O plano gratuito adormece após inatividade e corta as ligações abertas.
-    # Para produção usar pelo menos o plano "starter".
-    plan: starter
+    # Plano gratuito: adormece após ~15 min de inatividade e corta as ligações
+    # abertas (o tempo real volta a funcionar assim que alguém acede de novo).
+    # Quando houver orçamento, trocar para "starter" para evitar essa quebra.
+    plan: free
     region: frankfurt
     buildCommand: npm install && npm run build
     startCommand: npm start
