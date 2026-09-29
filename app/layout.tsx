@@ -42,9 +42,9 @@ export const metadata: Metadata = {
     description: SITE.description,
     images: [
       {
-        url: "/logos/logotipo.png",
-        width: 707,
-        height: 353,
+        url: "/logos/6.jpeg",
+        width: 1200,
+        height: 600,
         alt: SITE.name,
       },
     ],
@@ -53,7 +53,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: SITE.name,
     description: SITE.description,
-    images: ["/logos/logotipo.png"],
+    images: ["/logos/6.jpeg"],
   },
 };
 
