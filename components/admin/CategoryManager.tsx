@@ -193,7 +193,7 @@ function CategoryRowItem({ category }: { category: CategoryRow }) {
   }
 
   return (
-    <tr className="border-t border-taupe/15 align-top">
+    <tr className="border-t border-taupe/15 align-middle">
       <td className="px-4 py-3">
         <input value={name} onChange={(e) => setName(e.target.value)} className="input h-10" />
       </td>
@@ -220,7 +220,7 @@ function CategoryRowItem({ category }: { category: CategoryRow }) {
             type="button"
             onClick={handleSave}
             disabled={!dirty || saving}
-            className="rounded-full border border-ink px-4 py-2 font-body text-xs tracking-wide-label uppercase text-ink transition hover:bg-ink hover:text-cream disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex h-10 items-center justify-center rounded-full border border-ink px-4 font-body text-xs tracking-wide-label uppercase text-ink transition hover:bg-ink hover:text-cream disabled:cursor-not-allowed disabled:opacity-40"
           >
             {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : "Guardar"}
           </button>
@@ -229,7 +229,7 @@ function CategoryRowItem({ category }: { category: CategoryRow }) {
             onClick={handleDelete}
             disabled={saving}
             aria-label={`Eliminar categoria ${category.name}`}
-            className="flex h-9 w-9 items-center justify-center text-ink/60 transition hover:text-ink disabled:opacity-40"
+            className="flex h-10 w-10 items-center justify-center text-ink/60 transition hover:text-ink disabled:opacity-40"
           >
             <Trash2 className="h-4 w-4" aria-hidden="true" />
           </button>
