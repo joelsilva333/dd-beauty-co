@@ -1,4 +1,4 @@
-// Chave das sessões do painel. Partilhada pelo middleware (edge) e por lib/auth.
+// Chave das sessões do painel. Partilhada pelo proxy (edge) e por lib/auth.
 export function adminSessionSecret(): Uint8Array {
   const value = process.env.ADMIN_SESSION_SECRET;
   if (!value) {

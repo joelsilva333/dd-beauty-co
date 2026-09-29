@@ -5,7 +5,7 @@ import { jwtVerify } from "jose";
 const COOKIE_NAME = "dd_admin_session";
 const secret = adminSessionSecret;
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   if (!pathname.startsWith("/admin") || pathname === "/admin/login") {
     return NextResponse.next();
