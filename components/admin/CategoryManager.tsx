@@ -23,9 +23,9 @@ export function CategoryManager({ categories }: { categories: CategoryRow[] }) {
             <tr>
               <th className="px-4 py-3">Nome</th>
               <th className="px-4 py-3">Endereço</th>
-              <th className="px-4 py-3">Ordem</th>
-              <th className="px-4 py-3">Produtos</th>
-              <th className="px-4 py-3" />
+              <th className="px-4 py-3 text-center">Ordem</th>
+              <th className="px-4 py-3 text-center">Produtos</th>
+              <th className="px-4 py-3 text-center">Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -204,18 +204,18 @@ function CategoryRowItem({ category }: { category: CategoryRow }) {
           className="input h-10"
         />
       </td>
-      <td className="px-4 py-3">
+      <td className="px-4 py-3 text-center">
         <input
           type="number"
           min="0"
           value={order}
           onChange={(e) => setOrder(e.target.value)}
-          className="input h-10 w-20"
+          className="input mx-auto h-10 w-20 text-center"
         />
       </td>
-      <td className="px-4 py-3 text-ink/60">{category.productCount}</td>
+      <td className="px-4 py-3 text-center text-ink/60">{category.productCount}</td>
       <td className="px-4 py-3">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-center gap-3">
           <button
             type="button"
             onClick={handleSave}
@@ -234,7 +234,7 @@ function CategoryRowItem({ category }: { category: CategoryRow }) {
             <Trash2 className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
-        {error && <p className="mt-2 font-body text-xs text-ink/70">{error}</p>}
+        {error && <p className="mt-2 text-center font-body text-xs text-ink/70">{error}</p>}
       </td>
     </tr>
   );
