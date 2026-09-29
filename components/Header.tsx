@@ -44,7 +44,7 @@ export function Header() {
     // do menu a transbordar por cima da página sem fundo (parecia transparente).
     <>
       <header className="sticky top-0 z-40 border-b border-ink/8 bg-cream/60 backdrop-blur-xl">
-      <div className="mx-auto grid h-16 max-w-6xl grid-cols-3 items-center px-4 md:h-20 md:px-8">
+      <div className="mx-auto grid max-w-6xl grid-cols-3 items-center gap-2 px-4 py-3 md:px-8 md:py-5">
         <div className="flex items-center">
           <button
             type="button"
