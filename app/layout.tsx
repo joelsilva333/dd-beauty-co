@@ -29,8 +29,8 @@ export const metadata: Metadata = {
   description: SITE.description,
   applicationName: SITE.shortName,
   icons: {
-    icon: [{ url: "/logos/favicon.png", type: "image/png" }],
-    apple: [{ url: "/logos/favicon.png" }],
+    icon: [{ url: "/logos/7.jpeg", type: "image/jpeg" }],
+    apple: [{ url: "/logos/7.jpeg" }],
   },
   manifest: "/manifest.webmanifest",
   openGraph: {
