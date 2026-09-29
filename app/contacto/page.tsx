@@ -3,7 +3,7 @@ import { FaqAccordion } from "@/components/FaqAccordion";
 import { SITE, telLink, whatsappLink } from "@/lib/site-config";
 
 export const metadata = {
-  title: "Ajuda — Deodália Dias",
+  title: "Ajuda",
 };
 
 export default function ContactPage() {

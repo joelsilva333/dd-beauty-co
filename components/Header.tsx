@@ -104,7 +104,7 @@ export function Header() {
         aria-label="Menu"
       >
         <div className="flex h-16 items-center justify-between border-b border-ink/10 px-4">
-          <LogoMark className="h-6 w-6 text-ink" />
+          <LogoMark className="h-6 w-6" />
           <button
             type="button"
             onClick={() => setOpen(false)}

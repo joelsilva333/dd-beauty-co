@@ -4,6 +4,9 @@ const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "244900000000"
 
 export const SITE = {
   name: "Deodália Dias — Beauty & Co.",
+  shortName: "Deodália Dias",
+  description:
+    "Beleza angolana, escolhida a dedo. Descobre a curadoria da Deodália Dias e compra online com toda a confiança.",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
   whatsappNumber,
   phoneDisplay: process.env.NEXT_PUBLIC_SUPPORT_PHONE_DISPLAY ?? "+244 900 000 000",

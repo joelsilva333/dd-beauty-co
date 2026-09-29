@@ -4,8 +4,10 @@ import { MessageCircle, ShieldCheck, Truck } from "lucide-react";
 import { getProductBySlug } from "@/lib/products";
 import { formatKwanza } from "@/lib/currency";
 import { SHIPPING_SUMMARY } from "@/lib/shipping";
+import { SITE } from "@/lib/site-config";
 import { AddToCartForm } from "@/components/AddToCartForm";
 import { ProductGallery } from "@/components/ProductGallery";
+import { ShareButton } from "@/components/ShareButton";
 
 export const dynamic = "force-dynamic";
 
@@ -17,10 +19,29 @@ export async function generateMetadata({
   const { slug } = await params;
   const product = await getProductBySlug(slug);
   if (!product) return {};
+
+  const url = `/produtos/${product.slug}`;
+  const image = product.images[0];
+
   return {
-    title: `${product.name} — Deodália Dias`,
+    title: product.name,
     description: product.shortDesc,
-    openGraph: { images: product.images[0] ? [product.images[0].url] : undefined },
+    alternates: { canonical: url },
+    openGraph: {
+      type: "website",
+      url,
+      title: product.name,
+      description: product.shortDesc,
+      images: image
+        ? [{ url: image.url, alt: image.alt, width: 1200, height: 1200 }]
+        : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: product.name,
+      description: product.shortDesc,
+      images: image ? [image.url] : undefined,
+    },
   };
 }
 
@@ -34,9 +55,37 @@ export default async function ProductPage({
   if (!product || !product.active) notFound();
 
   const mainImage = product.images[0];
+  const productUrl = `${SITE.url}/produtos/${product.slug}`;
+
+  // Dados estruturados: permitem que o link partilhado mostre preço, imagem
+  // e disponibilidade (Google, WhatsApp e afins lêem isto ao pré-visualizar).
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    description: product.shortDesc,
+    image: product.images.map((img) => img.url),
+    url: productUrl,
+    brand: { "@type": "Brand", name: SITE.shortName },
+    ...(product.category && { category: product.category.name }),
+    offers: {
+      "@type": "Offer",
+      url: productUrl,
+      priceCurrency: product.currency,
+      price: (product.priceCents / 100).toFixed(2),
+      availability:
+        product.stock > 0
+          ? "https://schema.org/InStock"
+          : "https://schema.org/OutOfStock",
+    },
+  };
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 md:px-8 md:py-16">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
       <div className="grid gap-10 md:grid-cols-2 md:gap-16">
         <ProductGallery
           images={product.images.map((img) => ({ id: img.id, url: img.url, alt: img.alt }))}
@@ -98,6 +147,8 @@ export default async function ProductPage({
               Dúvidas? Usa o botão “Precisas de ajuda?”.
             </p>
           </div>
+
+          <ShareButton url={productUrl} title={product.name} />
         </div>
       </div>
 

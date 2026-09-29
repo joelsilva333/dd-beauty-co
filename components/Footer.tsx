@@ -7,7 +7,7 @@ export function Footer() {
     <footer className="mt-32 border-t border-ink/10 bg-cream text-ink">
       <div className="mx-auto grid max-w-6xl gap-12 px-4 py-16 md:grid-cols-[1.3fr_1fr_1fr] md:gap-8 md:px-8 md:py-24">
         <div className="flex flex-col gap-4">
-          <LogoMark className="h-7 w-7 text-ink/70" />
+          <LogoMark className="h-7 w-7 opacity-70" />
           <p className="max-w-xs font-body text-sm leading-relaxed text-ink/55">
             Beleza angolana, escolhida a dedo. Cuidamos de cada detalhe para
             que a tua rotina se sinta um ritual.

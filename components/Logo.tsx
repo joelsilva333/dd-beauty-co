@@ -1,24 +1,17 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export function LogoMark({ className = "" }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 48 48"
-      fill="none"
-      className={className}
-      aria-hidden="true"
-    >
-      <path
-        d="M24 6c9 6 14 13 14 20 0 7-6 12-14 12S10 33 10 26c0-7 5-14 14-20Z"
-        stroke="currentColor"
-        strokeWidth="1.4"
+    <span className={`relative inline-block ${className}`}>
+      <Image
+        src="/logos/imagotipo.png"
+        alt=""
+        fill
+        sizes="48px"
+        className="object-contain"
       />
-      <path
-        d="M12 24c6-4 12-4 18 0M12 24c6 4 12 4 18 0"
-        stroke="currentColor"
-        strokeWidth="1.2"
-      />
-    </svg>
+    </span>
   );
 }
 

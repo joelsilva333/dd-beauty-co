@@ -4,6 +4,10 @@ import { ProductCard } from "@/components/ProductCard";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = {
+  title: "Coleções",
+};
+
 export default async function CollectionsPage({
   searchParams,
 }: {
