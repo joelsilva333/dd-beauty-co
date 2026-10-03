@@ -9,18 +9,25 @@ import {
   ArrowRight,
   Check,
   CheckCircle2,
-  CreditCard,
-  Landmark,
   Loader2,
+  MapPin,
+  Plus,
   ShieldCheck,
-  Smartphone,
+  X,
 } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
 import { formatKwanza } from "@/lib/currency";
 import { calculateShippingCents, estimateDeliveryDays } from "@/lib/shipping";
 import { aoaCentsToUsdCents } from "@/lib/exchange";
+import {
+  type SavedAddress,
+  listSavedAddresses,
+  removeSavedAddress,
+  saveAddress,
+} from "@/lib/saved-addresses";
 import { CheckoutSteps } from "@/components/CheckoutSteps";
 import { LocationFields } from "@/components/LocationFields";
+import { PaymentLogo } from "@/components/PaymentLogo";
 
 type DeliveryData = {
   customerName: string;
@@ -62,6 +69,66 @@ export default function CheckoutPage({
   const [bitpayMobile, setBitpayMobile] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Moradas guardadas de compras anteriores (só neste aparelho — não há
+  // contas de cliente no site). Pré-preenchemos com a mais recente para a
+  // cliente não ter de escrever tudo outra vez.
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const [selectedSavedId, setSelectedSavedId] = useState<string | null>(null);
+  const [saveForNextTime, setSaveForNextTime] = useState(true);
+
+  useEffect(() => {
+    // Só pode ler o localStorage depois de montar (não existe no servidor);
+    // corre uma única vez, ao abrir o checkout.
+    const saved = listSavedAddresses();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sincronização única com o armazenamento do browser
+    setSavedAddresses(saved);
+    if (saved.length > 0) {
+      setSelectedSavedId(saved[0].id);
+      setDelivery({
+        customerName: saved[0].customerName,
+        customerPhone: saved[0].customerPhone,
+        customerEmail: saved[0].customerEmail,
+        province: saved[0].province,
+        municipality: saved[0].municipality,
+        bairro: saved[0].bairro,
+        addressLine: saved[0].addressLine,
+        addressNotes: saved[0].addressNotes,
+      });
+    }
+  }, []);
+
+  function applySavedAddress(saved: SavedAddress) {
+    setSelectedSavedId(saved.id);
+    setDelivery({
+      customerName: saved.customerName,
+      customerPhone: saved.customerPhone,
+      customerEmail: saved.customerEmail,
+      province: saved.province,
+      municipality: saved.municipality,
+      bairro: saved.bairro,
+      addressLine: saved.addressLine,
+      addressNotes: saved.addressNotes,
+    });
+  }
+
+  function startNewAddress() {
+    setSelectedSavedId(null);
+    setDelivery(EMPTY_DELIVERY);
+  }
+
+  // Editar um campo à mão deixa de ser "a morada guardada X" — evita que o
+  // cartão continue marcado como escolhido com dados já diferentes.
+  function updateDeliveryField<K extends keyof DeliveryData>(key: K, value: DeliveryData[K]) {
+    setSelectedSavedId(null);
+    setDelivery((d) => ({ ...d, [key]: value }));
+  }
+
+  function handleRemoveSavedAddress(id: string) {
+    removeSavedAddress(id);
+    setSavedAddresses((prev) => prev.filter((a) => a.id !== id));
+    if (selectedSavedId === id) startNewAddress();
+  }
 
   useEffect(() => {
     if (hydrated && items.length === 0) router.replace("/carrinho");
@@ -124,6 +191,8 @@ export default function CheckoutPage({
         return;
       }
 
+      if (saveForNextTime) saveAddress(delivery);
+
       window.location.href = json.redirectUrl;
     } catch {
       setError("Ocorreu um problema de ligação. Tenta novamente.");
@@ -153,6 +222,57 @@ export default function CheckoutPage({
             </p>
           </div>
 
+          {savedAddresses.length > 0 && (
+            <div className="flex flex-col gap-3">
+              <span className="eyebrow">As tuas moradas guardadas</span>
+              <div className="flex flex-wrap gap-3">
+                {savedAddresses.map((saved) => (
+                  <div key={saved.id} className="relative">
+                    <button
+                      type="button"
+                      onClick={() => applySavedAddress(saved)}
+                      aria-pressed={selectedSavedId === saved.id}
+                      className={`flex max-w-72 flex-col gap-0.5 border py-3 pl-4 pr-9 text-left transition ${
+                        selectedSavedId === saved.id
+                          ? "border-ink"
+                          : "border-ink/15 hover:border-ink/40"
+                      }`}
+                    >
+                      <span className="flex items-center gap-1.5 font-body text-sm font-medium text-ink">
+                        <MapPin className="h-3.5 w-3.5 text-gold" aria-hidden="true" strokeWidth={1.5} />
+                        {saved.customerName}
+                      </span>
+                      <span className="truncate font-body text-xs text-ink/55">
+                        {saved.addressLine}, {saved.municipality}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveSavedAddress(saved.id)}
+                      aria-label={`Remover morada de ${saved.customerName}`}
+                      className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center text-ink/40 hover:text-ink"
+                    >
+                      <X className="h-3.5 w-3.5" aria-hidden="true" />
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={startNewAddress}
+                  aria-pressed={selectedSavedId === null}
+                  className={`flex items-center gap-2 border border-dashed px-4 py-3 font-body text-sm transition ${
+                    selectedSavedId === null
+                      ? "border-ink text-ink"
+                      : "border-ink/25 text-ink/55 hover:border-ink/50 hover:text-ink"
+                  }`}
+                >
+                  <Plus className="h-4 w-4" aria-hidden="true" strokeWidth={1.5} />
+                  Nova morada
+                </button>
+              </div>
+            </div>
+          )}
+
           <form
             className="flex flex-col gap-6"
             onSubmit={(e) => {
@@ -165,7 +285,7 @@ export default function CheckoutPage({
                 required
                 value={delivery.customerName}
                 onChange={(e) =>
-                  setDelivery((d) => ({ ...d, customerName: e.target.value }))
+                  updateDeliveryField("customerName", e.target.value)
                 }
                 className="input"
                 placeholder="O teu nome"
@@ -178,7 +298,7 @@ export default function CheckoutPage({
                 type="tel"
                 value={delivery.customerPhone}
                 onChange={(e) =>
-                  setDelivery((d) => ({ ...d, customerPhone: e.target.value }))
+                  updateDeliveryField("customerPhone", e.target.value)
                 }
                 className="input"
                 placeholder="9XX XXX XXX"
@@ -190,7 +310,7 @@ export default function CheckoutPage({
                 type="email"
                 value={delivery.customerEmail}
                 onChange={(e) =>
-                  setDelivery((d) => ({ ...d, customerEmail: e.target.value }))
+                  updateDeliveryField("customerEmail", e.target.value)
                 }
                 className="input"
                 placeholder="para receberes a confirmação"
@@ -203,7 +323,10 @@ export default function CheckoutPage({
                 municipality: delivery.municipality,
                 bairro: delivery.bairro,
               }}
-              onChange={(location) => setDelivery((d) => ({ ...d, ...location }))}
+              onChange={(location) => {
+                setSelectedSavedId(null);
+                setDelivery((d) => ({ ...d, ...location }));
+              }}
             />
 
             <Field label="Morada / ponto de referência">
@@ -211,7 +334,7 @@ export default function CheckoutPage({
                 required
                 value={delivery.addressLine}
                 onChange={(e) =>
-                  setDelivery((d) => ({ ...d, addressLine: e.target.value }))
+                  updateDeliveryField("addressLine", e.target.value)
                 }
                 className="input"
                 placeholder="Rua, número, ponto de referência..."
@@ -222,7 +345,7 @@ export default function CheckoutPage({
               <textarea
                 value={delivery.addressNotes}
                 onChange={(e) =>
-                  setDelivery((d) => ({ ...d, addressNotes: e.target.value }))
+                  updateDeliveryField("addressNotes", e.target.value)
                 }
                 className="input min-h-24"
                 placeholder="Ex: casa azul perto do mercado"
@@ -236,6 +359,16 @@ export default function CheckoutPage({
                 {totalQuantity === 1 ? "produto" : "produtos"}).
               </p>
             )}
+
+            <label className="flex items-center gap-3 font-body text-sm text-ink/80">
+              <input
+                type="checkbox"
+                checked={saveForNextTime}
+                onChange={(e) => setSaveForNextTime(e.target.checked)}
+                className="h-4 w-4 accent-ink"
+              />
+              Guardar esta morada para a próxima compra
+            </label>
 
             <button type="submit" disabled={!deliveryValid} className="btn-dark mt-2">
               Continuar para pagamento
@@ -264,14 +397,19 @@ export default function CheckoutPage({
 
           <div className="flex flex-col gap-3">
             <PaymentOption
-              icon={<Landmark className="h-5 w-5" aria-hidden="true" strokeWidth={1.5} />}
+              icon={
+                <span className="flex items-center gap-2">
+                  <PaymentLogo logo="multicaixa_express" className="h-9 w-auto" />
+                  <PaymentLogo logo="multicaixa" className="h-9 w-9" />
+                </span>
+              }
               title="Pagamento em Kwanza (Angola)"
               description="Multicaixa Express (aprovas no telemóvel) ou Referência Multicaixa (pagas no ATM ou na app do banco)."
               selected={paymentMethod === "BITPAY_AO"}
               onSelect={() => setPaymentMethod("BITPAY_AO")}
             />
             <PaymentOption
-              icon={<CreditCard className="h-5 w-5" aria-hidden="true" strokeWidth={1.5} />}
+              icon={<PaymentLogo logo="visa" className="h-6 w-auto" />}
               title="Cartão internacional"
               description="Visa, Mastercard e outros cartões internacionais, numa página de pagamento segura."
               selected={paymentMethod === "STRIPE"}
@@ -283,7 +421,7 @@ export default function CheckoutPage({
             <fieldset className="fade-up flex flex-col gap-3 border-t border-ink/10 pt-6">
               <legend className="eyebrow mb-1">Escolhe a forma de pagar em Kwanza</legend>
               <SubOption
-                icon={<Smartphone className="h-4 w-4" aria-hidden="true" strokeWidth={1.5} />}
+                icon={<PaymentLogo logo="multicaixa_express" className="h-8 w-auto" />}
                 title="Multicaixa Express"
                 description="Aprovas o pagamento na app, no teu telemóvel. É o mais rápido."
                 selected={bitpayMethod === "multicaixa_express"}
@@ -303,7 +441,7 @@ export default function CheckoutPage({
                 </label>
               )}
               <SubOption
-                icon={<Landmark className="h-4 w-4" aria-hidden="true" strokeWidth={1.5} />}
+                icon={<PaymentLogo logo="multicaixa" className="h-8 w-8" />}
                 title="Referência Multicaixa"
                 description="Recebes uma referência para pagar no ATM ou na app do banco, até 3 dias."
                 selected={bitpayMethod === "multicaixa_reference"}
@@ -378,11 +516,16 @@ export default function CheckoutPage({
           </div>
 
           <div className="flex items-start gap-3 border-t border-ink/10 pt-6 font-body text-sm text-ink/65">
-            {paymentMethod === "STRIPE" ? (
-              <CreditCard className="mt-0.5 h-5 w-5 shrink-0 text-gold" aria-hidden="true" strokeWidth={1.5} />
-            ) : (
-              <Landmark className="mt-0.5 h-5 w-5 shrink-0 text-gold" aria-hidden="true" strokeWidth={1.5} />
-            )}
+            <PaymentLogo
+              logo={
+                paymentMethod === "STRIPE"
+                  ? "visa"
+                  : bitpayMethod === "multicaixa_express"
+                    ? "multicaixa_express"
+                    : "multicaixa"
+              }
+              className="mt-0.5 h-7 w-auto"
+            />
             <div>
               <p className="font-medium text-ink">
                 {paymentMethod === "STRIPE"

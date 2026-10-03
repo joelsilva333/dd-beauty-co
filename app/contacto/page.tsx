@@ -1,5 +1,6 @@
 import { MessageCircle, Phone } from "lucide-react";
 import { FaqAccordion } from "@/components/FaqAccordion";
+import { ContactForm } from "@/components/ContactForm";
 import { SITE, telLink, whatsappLink } from "@/lib/site-config";
 
 export const metadata = {
@@ -42,6 +43,10 @@ export default function ContactPage() {
       </div>
 
       <FaqAccordion />
+
+      <div className="mt-16 border-t border-ink/10 pt-16">
+        <ContactForm />
+      </div>
     </div>
   );
 }
