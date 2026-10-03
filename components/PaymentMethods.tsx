@@ -1,18 +1,19 @@
-import { CreditCard, Home, Landmark, Smartphone } from "lucide-react";
+import { Home } from "lucide-react";
+import { PaymentLogo, type PaymentLogoKey } from "@/components/PaymentLogo";
 
-const METHODS = [
+const METHODS: { logo: PaymentLogoKey; title: string; description: string }[] = [
   {
-    icon: Smartphone,
+    logo: "multicaixa_express",
     title: "Multicaixa Express",
     description: "Aprovas o pagamento no teu telemóvel, em Kwanza. É o mais rápido.",
   },
   {
-    icon: Landmark,
+    logo: "multicaixa",
     title: "Referência Multicaixa",
     description: "Pagas no ATM ou na app do teu banco, em Kwanza, até 3 dias.",
   },
   {
-    icon: CreditCard,
+    logo: "visa",
     title: "Cartão internacional",
     description: "Visa, Mastercard e outros cartões internacionais.",
   },
@@ -21,7 +22,8 @@ const METHODS = [
 /**
  * Formas de pagamento explicadas ao cliente sem mencionar os prestadores
  * técnicos por trás (não são relevantes para quem compra) — só o que a
- * cliente de facto escolhe e usa.
+ * cliente de facto escolhe e usa, com os logótipos reais para reconhecer
+ * de imediato.
  */
 export function PaymentMethods() {
   return (
@@ -31,9 +33,9 @@ export function PaymentMethods() {
         Recebes a encomenda no conforto da tua casa
       </p>
       <ul className="flex flex-col gap-3 pl-6 font-body text-sm text-ink/65">
-        {METHODS.map(({ icon: Icon, title, description }) => (
-          <li key={title} className="flex items-start gap-2.5">
-            <Icon className="mt-0.5 h-4 w-4 shrink-0 text-ink/40" aria-hidden="true" strokeWidth={1.5} />
+        {METHODS.map(({ logo, title, description }) => (
+          <li key={title} className="flex items-start gap-3">
+            <PaymentLogo logo={logo} className="mt-0.5 h-5 w-auto shrink-0" />
             <span>
               <span className="font-medium text-ink">{title}</span> — {description}
             </span>
