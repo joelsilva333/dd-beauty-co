@@ -1,4 +1,4 @@
-import { Home } from "lucide-react";
+import { Wallet } from "lucide-react";
 import { PaymentLogo, type PaymentLogoKey } from "@/components/PaymentLogo";
 
 const METHODS: { logo: PaymentLogoKey; title: string; description: string }[] = [
@@ -29,8 +29,8 @@ export function PaymentMethods() {
   return (
     <div className="flex flex-col gap-4 border-t border-ink/10 pt-6">
       <p className="flex items-center gap-2.5 font-medium text-ink">
-        <Home className="h-4 w-4 text-gold" aria-hidden="true" strokeWidth={1.5} />
-        Recebes a encomenda no conforto da tua casa
+        <Wallet className="h-4 w-4 text-gold" aria-hidden="true" strokeWidth={1.5} />
+        Métodos de pagamento disponíveis
       </p>
       <ul className="flex flex-col gap-3 pl-6 font-body text-sm text-ink/65">
         {METHODS.map(({ logo, title, description }) => (
