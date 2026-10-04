@@ -36,7 +36,7 @@ export default function LoginPage({
       return;
     }
 
-    router.push(next && next.startsWith("/") ? next : "/conta");
+    router.push(next && next.startsWith("/") ? next : "/");
     router.refresh();
   }
 

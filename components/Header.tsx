@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { LayoutDashboard, Menu, ShoppingBag, User, X } from "lucide-react";
 import { Logo, LogoMark } from "./Logo";
 import { useCart } from "@/lib/cart-context";
+import { getInitials } from "@/lib/initials";
 
 const NAV_LINKS = [
   { href: "/colecoes", label: "Coleções" },
@@ -13,7 +14,13 @@ const NAV_LINKS = [
   { href: "/contacto", label: "Ajuda" },
 ];
 
-export function Header({ isAdmin = false }: { isAdmin?: boolean }) {
+export function Header({
+  isAdmin = false,
+  customerName = null,
+}: {
+  isAdmin?: boolean;
+  customerName?: string | null;
+}) {
   const [open, setOpen] = useState(false);
   const { totalItems } = useCart();
   const pathname = usePathname();
@@ -77,12 +84,18 @@ export function Header({ isAdmin = false }: { isAdmin?: boolean }) {
           <Link
             href="/conta"
             className="flex h-11 items-center gap-2 px-1 text-ink transition hover:text-ink/60"
-            aria-label="A minha conta"
-            title="A minha conta"
+            aria-label={customerName ? `A minha conta — ${customerName}` : "Entrar ou criar conta"}
+            title={customerName ?? "A minha conta"}
           >
-            <User className="h-5 w-5" aria-hidden="true" strokeWidth={1.5} />
+            {customerName ? (
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-ink font-body text-[10px] font-medium text-cream">
+                {getInitials(customerName)}
+              </span>
+            ) : (
+              <User className="h-5 w-5" aria-hidden="true" strokeWidth={1.5} />
+            )}
             <span className="hidden font-body text-[11px] font-medium tracking-[0.2em] uppercase lg:inline">
-              Conta
+              {customerName ? customerName.split(" ")[0] : "Conta"}
             </span>
           </Link>
           {isAdmin && (
@@ -156,8 +169,14 @@ export function Header({ isAdmin = false }: { isAdmin?: boolean }) {
             className="fade-up mt-8 flex items-center gap-2 font-body text-[11px] font-medium tracking-[0.22em] text-ink/60 uppercase"
             style={{ animationDelay: open ? `${NAV_LINKS.length * 60}ms` : undefined }}
           >
-            <User className="h-4 w-4" aria-hidden="true" strokeWidth={1.5} />
-            A minha conta
+            {customerName ? (
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-ink font-body text-[9px] font-medium text-cream">
+                {getInitials(customerName)}
+              </span>
+            ) : (
+              <User className="h-4 w-4" aria-hidden="true" strokeWidth={1.5} />
+            )}
+            {customerName ? `Olá, ${customerName.split(" ")[0]}` : "A minha conta"}
           </Link>
           <Link
             href="/minha-conta"

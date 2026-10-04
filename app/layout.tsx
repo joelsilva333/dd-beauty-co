@@ -8,6 +8,7 @@ import { RevealOnScroll } from "@/components/RevealOnScroll";
 import { CartProvider } from "@/lib/cart-context";
 import { SITE } from "@/lib/site-config";
 import { getAdminSession } from "@/lib/auth";
+import { getCustomerSession } from "@/lib/customer-auth";
 
 const cormorant = Cormorant_Garamond({
   variable: "--font-cormorant",
@@ -62,6 +63,8 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   // Serve para o Header mostrar sempre um atalho para o painel a quem já
   // tem sessão de administração aberta, mesmo a navegar no site público.
   const isAdmin = Boolean(await getAdminSession());
+  // Para o Header mostrar o avatar com as iniciais em vez do ícone genérico.
+  const customerSession = await getCustomerSession();
 
   return (
     <html
@@ -70,7 +73,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col font-body">
         <CartProvider>
-          <Header isAdmin={isAdmin} />
+          <Header isAdmin={isAdmin} customerName={customerSession?.name ?? null} />
           <main className="flex-1">{children}</main>
           <Footer />
           <SupportWidget />

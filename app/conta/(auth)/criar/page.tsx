@@ -38,7 +38,7 @@ export default function RegisterPage({
       return;
     }
 
-    router.push(next && next.startsWith("/") ? next : "/conta");
+    router.push(next && next.startsWith("/") ? next : "/");
     router.refresh();
   }
 

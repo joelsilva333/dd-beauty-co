@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
 
     await createCustomerSession({ customerId: customer.id, email: customer.email, name: customer.name });
 
-    const response = NextResponse.redirect(new URL(next || "/conta", origin));
+    const response = NextResponse.redirect(new URL(next || "/", origin));
     response.cookies.delete(STATE_COOKIE);
     return response;
   } catch (error) {

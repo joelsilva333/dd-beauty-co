@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
   }
 
   const next = request.nextUrl.searchParams.get("next");
-  const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "/conta";
+  const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
 
   const state = randomBytes(24).toString("base64url");
   const response = NextResponse.redirect(googleAuthUrl(request.nextUrl.origin, state));
