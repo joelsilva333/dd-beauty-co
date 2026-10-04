@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Menu, ShoppingBag, X } from "lucide-react";
+import { LayoutDashboard, Menu, ShoppingBag, User, X } from "lucide-react";
 import { Logo, LogoMark } from "./Logo";
 import { useCart } from "@/lib/cart-context";
 
@@ -74,6 +74,17 @@ export function Header({ isAdmin = false }: { isAdmin?: boolean }) {
         </div>
 
         <div className="flex items-center justify-end gap-1">
+          <Link
+            href="/conta"
+            className="flex h-11 items-center gap-2 px-1 text-ink transition hover:text-ink/60"
+            aria-label="A minha conta"
+            title="A minha conta"
+          >
+            <User className="h-5 w-5" aria-hidden="true" strokeWidth={1.5} />
+            <span className="hidden font-body text-[11px] font-medium tracking-[0.2em] uppercase lg:inline">
+              Conta
+            </span>
+          </Link>
           {isAdmin && (
             <Link
               href="/admin"
@@ -140,19 +151,28 @@ export function Header({ isAdmin = false }: { isAdmin?: boolean }) {
             </Link>
           ))}
           <Link
-            href="/minha-conta"
+            href="/conta"
             onClick={() => setOpen(false)}
-            className="fade-up mt-8 font-body text-[11px] font-medium tracking-[0.22em] text-ink/60 uppercase"
+            className="fade-up mt-8 flex items-center gap-2 font-body text-[11px] font-medium tracking-[0.22em] text-ink/60 uppercase"
             style={{ animationDelay: open ? `${NAV_LINKS.length * 60}ms` : undefined }}
           >
-            Os meus pedidos
+            <User className="h-4 w-4" aria-hidden="true" strokeWidth={1.5} />
+            A minha conta
+          </Link>
+          <Link
+            href="/minha-conta"
+            onClick={() => setOpen(false)}
+            className="fade-up mt-3 font-body text-[11px] font-medium tracking-[0.22em] text-ink/60 uppercase"
+            style={{ animationDelay: open ? `${(NAV_LINKS.length + 1) * 60}ms` : undefined }}
+          >
+            Os meus pedidos (sem conta)
           </Link>
           {isAdmin && (
             <Link
               href="/admin"
               onClick={() => setOpen(false)}
               className="fade-up mt-3 flex items-center gap-2 font-body text-[11px] font-medium tracking-[0.22em] text-ink/60 uppercase"
-              style={{ animationDelay: open ? `${(NAV_LINKS.length + 1) * 60}ms` : undefined }}
+              style={{ animationDelay: open ? `${(NAV_LINKS.length + 2) * 60}ms` : undefined }}
             >
               <LayoutDashboard className="h-4 w-4" aria-hidden="true" strokeWidth={1.5} />
               Painel de administração

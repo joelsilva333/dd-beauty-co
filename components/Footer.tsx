@@ -22,8 +22,11 @@ export function Footer() {
           <Link href="/sobre" className="font-body text-sm text-ink/70 transition hover:text-ink">
             A marca
           </Link>
+          <Link href="/conta" className="font-body text-sm text-ink/70 transition hover:text-ink">
+            A minha conta
+          </Link>
           <Link href="/minha-conta" className="font-body text-sm text-ink/70 transition hover:text-ink">
-            Os meus pedidos
+            Os meus pedidos (sem conta)
           </Link>
         </div>
 

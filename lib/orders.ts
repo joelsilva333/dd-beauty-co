@@ -51,7 +51,7 @@ async function emitStock(productIds: string[]) {
 
 // Cria a encomenda e reserva o stock na mesma transação: se um produto
 // esgotar entretanto, nada é gravado e a cliente recebe uma mensagem clara.
-export async function createOrder(data: CheckoutInput) {
+export async function createOrder(data: CheckoutInput, customerId?: string) {
   const quantities = new Map<string, number>();
   for (const item of data.items) {
     quantities.set(item.productId, (quantities.get(item.productId) ?? 0) + item.quantity);
@@ -98,6 +98,7 @@ export async function createOrder(data: CheckoutInput) {
         return tx.order.create({
           data: {
             orderNumber: generateOrderNumber(),
+            customerId,
             customerName: data.customerName.trim(),
             customerPhone: normalizePhone(data.customerPhone),
             customerEmail: data.customerEmail || null,

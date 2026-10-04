@@ -6,6 +6,7 @@ import { cancelUnpaidOrder, createOrder, OrderError } from "@/lib/orders";
 import { BitpayError, bitpayConfigured, startBitpayPayment } from "@/lib/bitpay";
 import { normalizePhone } from "@/lib/angola";
 import { prisma } from "@/lib/prisma";
+import { getCustomerSession } from "@/lib/customer-auth";
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
@@ -18,9 +19,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Lida pelo servidor (nunca confiamos num customerId vindo do cliente):
+  // se há sessão de cliente iniciada, a encomenda fica ligada à conta.
+  const customerSession = await getCustomerSession();
+
   let created;
   try {
-    created = await createOrder(parsed.data);
+    created = await createOrder(parsed.data, customerSession?.customerId);
   } catch (error) {
     if (error instanceof OrderError) {
       return NextResponse.json({ error: error.message }, { status: 409 });
