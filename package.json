@@ -6,6 +6,7 @@
     "dev": "next dev --webpack",
     "dev:realtime": "tsx watch --env-file=.env realtime/src/server.ts",
     "build": "next build",
+    "vercel-build": "prisma migrate deploy && next build",
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate",
